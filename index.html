@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Content Generator</title>
+    <title>Генератор Идей</title>
     <style>
-        /* CSS Reset & Apple Design Language */
+        /* CSS Reset & Premium Apple Style */
         *, *::before, *::after {
             box-sizing: border-box;
             margin: 0;
@@ -38,7 +38,7 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Главный контейнер с эффектом матового стекла и плавной анимацией */
+        /* Главный контейнер с эффектом размытия стекла */
         .app-container {
             width: 100%;
             max-width: 540px;
@@ -61,7 +61,6 @@
             }
         }
 
-        /* Заголовки */
         .app-header {
             text-align: center;
             margin-bottom: 32px;
@@ -83,7 +82,7 @@
             font-weight: 400;
         }
 
-        /* Поля формы и их каскадное появление */
+        /* Поля ввода и их плавное появление */
         .field-group {
             margin-bottom: 20px;
             opacity: 0;
@@ -152,7 +151,7 @@
             cursor: pointer;
         }
 
-        /* Стильная Apple Кнопка */
+        /* Премиальная кнопка генерации */
         .submit-btn {
             width: 100%;
             background: linear-gradient(180deg, #0077ed 0%, #006edb 100%);
@@ -179,12 +178,12 @@
             opacity: 0.95;
         }
 
-        /* Сгруппированная зона результата (не выходит за рамки) */
+        /* Контейнер результата с защитой от переполнения */
         .result-container {
             margin-top: 32px;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
             padding-top: 28px;
-            display: none; /* Переключится на block из твоего обработчика при выводе */
+            display: none; /* Показывается динамически при генерации */
             animation: fadeInContainer 0.5s var(--apple-easing) forwards;
         }
 
@@ -213,7 +212,7 @@
             box-shadow: 0 0 8px #30d158;
         }
 
-        /* Кнопка Копирования */
+        /* Кнопка быстрого копирования */
         .copy-btn {
             background-color: rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -244,20 +243,20 @@
             stroke-linejoin: round;
         }
 
-        /* Ограниченный бокс вывода с внутренним премиум-скроллом */
+        /* Фиксированный бокс, за рамки которого текст не выйдет */
         .result-box {
             background-color: rgba(0, 0, 0, 0.25);
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 14px;
             padding: 20px;
             min-height: 80px;
-            max-height: 320px;
+            max-height: 350px;
             overflow-y: auto;
             word-wrap: break-word;
             word-break: break-word;
         }
 
-        /* Оформление внутренней структуры текста */
+        /* Стилизация сгруппированных блоков текста внутри результата */
         .result-block {
             margin-bottom: 16px;
         }
@@ -278,8 +277,10 @@
             font-size: 11pt;
             line-height: 1.55;
             color: #e8e8ed;
+            white-space: pre-wrap; /* Сохраняет переносы строк из бэкенда */
         }
 
+        /* Кастомный тонкий скроллбар */
         .result-box::-webkit-scrollbar {
             width: 6px;
         }
@@ -296,37 +297,37 @@
 
     <div class="app-container">
         <div class="app-header">
-            <h1 class="app-title">AI Generator</h1>
-            <div class="app-subtitle">Интеллектуальная генерация контента</div>
+            <h1 class="app-title">Генератор Идей</h1>
+            <div class="app-subtitle">Создание контента нового поколения</div>
         </div>
 
         <form id="generatorForm">
             <div class="field-group">
                 <label for="niche">Ниша <span>(минимум 3 варианта)</span></label>
-                <input type="text" id="niche" placeholder="Выберите вашу нишу" required>
+                <input type="text" id="niche" placeholder="Введите или выберите нишу" required>
             </div>
 
             <div class="field-group">
                 <label for="audience">Аудитория</label>
-                <input type="text" id="audience" placeholder="например: новички 18-25" required>
+                <input type="text" id="audience" placeholder="например: эксперты, предприниматели" required>
             </div>
 
             <div class="field-group">
                 <label for="target">Цель</label>
-                <input type="text" id="target" placeholder="например: увеличить продажи на 20%" required>
+                <input type="text" id="target" placeholder="например: лидогенерация, прогрев" required>
             </div>
 
             <div class="field-group">
                 <label for="style">Стиль</label>
                 <select id="style">
-                    <option value="official">Официальный</option>
-                    <option value="friendly">Дружелюбный</option>
-                    <option value="creative">Креативный</option>
-                    <option value="minimal">Минималистичный</option>
+                    <option value="Официальный">Официальный</option>
+                    <option value="Дружелюбный">Дружелюбный</option>
+                    <option value="Креативный">Креативный</option>
+                    <option value="Минималистичный">Минималистичный</option>
                 </select>
             </div>
 
-            <button type="submit" class="submit-btn">Сгенерировать</button>
+            <button type="submit" class="submit-btn" id="submitBtn">Сгенерировать</button>
         </form>
 
         <div class="result-container" id="resultContainer">
@@ -338,3 +339,82 @@
                 </button>
             </div>
             <div class="result-box" id="resultBox">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('generatorForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const resultContainer = document.getElementById('resultContainer');
+            const resultBox = document.getElementById('resultBox');
+            
+            // Сохраняем исходный текст кнопки
+            const originalBtnText = submitBtn.innerText;
+            submitBtn.innerText = 'Генерирую...';
+            submitBtn.disabled = true;
+
+            const formData = {
+                niche: document.getElementById('niche').value,
+                audience: document.getElementById('audience').value,
+                target: document.getElementById('target').value,
+                style: document.getElementById('style').value
+            };
+
+            try {
+                // Твой родной fetch-запрос к серверу генерации
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    resultContainer.style.display = 'block';
+                    
+                    // Красиво группируем контент внутри защищенного бокса
+                    resultBox.innerHTML = `
+                        <div class="result-block">
+                            <div class="result-meta">Сгенерированный контент</div>
+                            <div class="result-text">${result.text}</div>
+                        </div>
+                    `;
+                    
+                    // Плавная прокрутка к ответу
+                    resultContainer.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('Ошибка при генерации: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Произошла ошибка при отправке запроса');
+            } finally {
+                submitBtn.innerText = originalBtnText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Нативный скрипт кнопки быстрого копирования
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const resultBox = document.getElementById('resultBox');
+            const copyBtnText = document.getElementById('copyBtnText');
+            
+            // Извлекаем чистый текст без служебных тегов метаданных
+            const textToCopy = resultBox.querySelector('.result-text')?.innerText || resultBox.innerText;
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                copyBtnText.innerText = 'Скопировано!';
+                setTimeout(() => {
+                    copyBtnText.innerText = 'Скопировать';
+                }, 2000);
+            }).catch(err => console.error('Ошибка копирования:', err));
+        });
+    </script>
+</body>
+</html>
