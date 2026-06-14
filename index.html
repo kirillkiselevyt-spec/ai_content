@@ -1,67 +1,45 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Generator Pro</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>AI Generator</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-    <div class="app-container">
-        <div class="app-header">
-            <h1 class="app-title">AI Generator</h1>
-            <div class="app-subtitle">Интеллектуальная генерация контента</div>
-        </div>
+<div class="container">
 
-        <form id="generatorForm" onsubmit="event.preventDefault(); generate();">
-            <div class="field-group">
-                <label for="niche">Ниша <span>(минимум 3 варианта)</span></label>
-                <input id="niche" list="niche-list" placeholder="Выберите или введите нишу" required>
-                <datalist id="niche-list">
-                    <option value="Маркетинг">
-                    <option value="IT-технологии">
-                    <option value="Образование и онлайн-курсы">
-                    <option value="Продажи и ритейл">
-                </datalist>
-            </div>
+  <h1>AI Generator</h1>
 
-            <div class="field-group">
-                <label for="audience">Аудитория</label>
-                <input type="text" id="audience" placeholder="например: предприниматели, эксперты" required>
-            </div>
+  <label for="niche">Ниша (минимум 3 варианта)</label>
+  <input id="niche" list="niche-list" placeholder="Выберите нишу" />
+  <datalist id="niche-list">
+    <option value="Маркетинг">
+    <option value="IT">
+    <option value="Образование">
+  </datalist>
 
-            <div class="field-group">
-                <label for="goal">Цель</label>
-                <input type="text" id="goal" placeholder="например: прогрев, лидогенерация, продажа" required>
-            </div>
+  <label for="audience">Аудитория</label>
+  <input id="audience" placeholder="например: новички 18-25" />
 
-            <div class="field-group">
-                <label for="style">Стиль</label>
-                <select id="style">
-                    <option value="formal">Официальный</option>
-                    <option value="friendly">Дружелюбный</option>
-                    <option value="sales">Продающий</option>
-                    <option value="creative">Креативный</option>
-                    <option value="minimal">Минимализм</option>
-                </select>
-            </div>
+  <label for="goal">Цель</label>
+  <input id="goal" placeholder="например: увеличить продажи на 20%" />
 
-            <button type="submit" class="submit-btn" id="submitBtn">Сгенерировать</button>
-        </form>
+  <label for="style">Стиль</label>
+  <select id="style">
+    <option value="formal">Официальный</option>
+    <option value="friendly">Дружелюбный</option>
+    <option value="sales">Продающий</option>
+    <option value="creative">Креативный</option>
+    <option value="minimal">Минимализм</option>
+  </select>
 
-        <div class="result-container" id="resultContainer">
-            <div class="result-header">
-                <div class="result-title" id="resultTitle">Результат генерации</div>
-                <button class="copy-btn" id="copyBtn" type="button" onclick="copyResult()">
-                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                    <span id="copyBtnText">Скопировать</span>
-                </button>
-            </div>
-            <pre class="result-box" id="output"></pre>
-        </div>
-    </div>
+  <button onclick="generate()">Сгенерировать</button>
 
-    <script src="app.js"></script>
+  <pre id="output"></pre>
+
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
