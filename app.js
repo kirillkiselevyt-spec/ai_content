@@ -1,52 +1,129 @@
 const API_URL = "https://ai-bot-backend-x5nr.onrender.com/generate";
 
-async function sendMessage() {
-  const text = document.getElementById("userInput").value.trim();
-  if (!text) return;
+// Инициализация или получение UUID пользователя из LocalStorage
+function getOrCreateUserId() {
+  let userId = localStorage.getItem("ai_generator_user_id");
+  if (!userId) {
+    // Простая и быстрая генерация псевдо-UUID
+    userId = 'user_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+    localStorage.setItem("ai_generator_user_id", userId);
+  }
+  return userId;
+}
 
-  const niche = document.getElementById("niche").value;
-  const audience = document.getElementById("audience").value;
-  const goal = document.getElementById("goal").value;
-  const style = document.getElementById("style").value;
+async function generate() {
+  const niche    = document.getElementById("niche").value.trim();
+  const audience = document.getElementById("audience").value.trim();
+  const goal     = document.getElementById("goal").value.trim();
+  const style    = document.getElementById("style").value;
 
-  addMessage(text, "user");
-  document.getElementById("userInput").value = "";
+  if (!niche || !audience || !goal) {
+    showOutput("⚠️ Пожалуйста, заполните все поля перед генерацией.", true);
+    return;
+  }
+
+  const prompt = `
+Напиши контент для следующего запроса:
+
+Ниша: ${niche}
+Целевая аудитория: ${audience}
+Цель: ${goal}
+Стиль написания: ${styleLabel(style)}
+
+Создай качественный, убедительный текст, полностью соответствующий указанным параметрам.
+`.trim();
+
+  setLoading(true);
+  showOutput("⏳ Генерируем текст...", false);
+
+  // Собираем расширенный пакет данных для бэкенда с учетом истории
+  const payload = {
+    user_id: getOrCreateUserId(), // Передаем ID пользователя
+    prompt: prompt,
+    niche: niche,
+    audience: audience,
+    style: styleLabel(style)
+  };
 
   try {
-    const res = await fetch(API_URL, {
+    const response = await fetch(API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: text,
-        niche,
-        audience,
-        goal,
-        style
-      })
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload), // Отправляем payload
     });
 
-    const data = await res.json();
+    const data = await response.json();
 
-    const reply =
-      data?.text ||
-      data?.response ||
-      data?.result ||
-      "Ошибка API";
+    if (!response.ok) {
+      showOutput(`❌ Ошибка: ${data.detail || 'Неизвестная ошибка сервера'}`, true);
+      return;
+    }
 
-    addMessage(reply, "bot");
-
+    if (data.result) {
+      showOutput(data.result, false);
+    } else {
+      showOutput("❌ Сервер вернул пустой ответ.", true);
+    }
   } catch (err) {
-    addMessage("Ошибка: " + err.message, "bot");
+    console.error("Fetch error:", err);
+    showOutput("❌ Не удалось подключиться к серверу. Проверьте сеть.", true);
+  } finally {
+    setLoading(false);
   }
 }
 
-function addMessage(text, type) {
-  const chat = document.getElementById("chat");
+function styleLabel(value) {
+  const labels = {
+    formal:   "Официальный",
+    friendly: "Дружелюбный",
+    sales:    "Продающий",
+    creative: "Креативный",
+    minimal:  "Минимализм",
+  };
+  return labels[value] || value;
+}
 
-  const div = document.createElement("div");
-  div.classList.add("message", type);
-  div.textContent = text;
+function showOutput(text, isError) {
+  const container = document.getElementById("resultContainer");
+  const title = document.getElementById("resultTitle");
+  const output = document.getElementById("output");
+  const copyBtn = document.getElementById("copyBtn");
 
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
+  container.style.display = "block";
+  output.textContent = text;
+  
+  if (isError) {
+    output.style.color = "#ff453a";
+    title.textContent = "Ошибка исполнения";
+    title.classList.add("error-state");
+    copyBtn.style.display = "none";
+  } else {
+    output.style.color = "inherit";
+    title.textContent = "Результат генерации";
+    title.classList.remove("error-state");
+    copyBtn.style.display = "flex";
+  }
+}
+
+function setLoading(isLoading) {
+  const btn = document.getElementById("submitBtn");
+  if (!btn) return;
+  btn.disabled = isLoading;
+  btn.textContent = isLoading ? "Генерируем..." : "Сгенерировать";
+}
+
+function copyResult() {
+  const output = document.getElementById("output");
+  const copyBtnText = document.getElementById("copyBtnText");
+  
+  if (!output || output.textContent.startsWith("⏳") || output.textContent.startsWith("❌")) return;
+
+  navigator.clipboard.writeText(output.textContent).then(() => {
+    copyBtnText.innerText = 'Скопировано!';
+    setTimeout(() => {
+      copyBtnText.innerText = 'Скопировать';
+    }, 2000);
+  }).catch(err => console.error('Ошибка буфера:', err));
 }
