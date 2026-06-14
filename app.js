@@ -1,35 +1,35 @@
 const API_URL = "https://ai-bot-backend-x5nr.onrender.com/generate";
 
-async function generateContent() {
+async function generate() {
+  const niche = document.getElementById("niche").value;
+  const audience = document.getElementById("audience").value;
+  const goal = document.getElementById("goal").value;
+  const style = document.getElementById("style").value;
 
-    const data = {
-        user_id: "1",
-        niche: document.getElementById("niche").value,
-        audience: document.getElementById("audience").value,
-        goal: document.getElementById("goal").value,
-        style: document.getElementById("style").value
-    };
+  const prompt = `
+Ниша: ${niche}
+Аудитория: ${audience}
+Цель: ${goal}
+Стиль: ${style}
 
-    document.getElementById("output").innerText = "Генерация...";
+Сгенерируй текст под эти параметры.
+`;
 
-    try {
-        const res = await fetch(API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-        });
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ prompt })
+    });
 
-        const result = await res.json();
+    const data = await res.json();
 
-        console.log("SERVER RESPONSE:", result);
-
-        document.getElementById("output").innerText =
-            result.text || result.error || "Ошибка: пустой ответ";
-
-    } catch (err) {
-        document.getElementById("output").innerText =
-            "Ошибка сети: " + err.message;
-    }
+    document.getElementById("output").innerText =
+      data.result || data.error || "Ошибка";
+  } catch (err) {
+    document.getElementById("output").innerText =
+      "Ошибка: " + err.message;
+  }
 }
