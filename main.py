@@ -60,13 +60,13 @@ def generate(data: RequestData):
 Сгенерируй 5 идей контента.
 """
 
-    try:
-        model = genai.GenerativeModel("gemini-pro")
-        response = model.generate_content(prompt)
-        result = response.text
-    except Exception as e:
-        result = f"AI ERROR: {str(e)}"
-
+   try:
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    response = model.generate_content(prompt)
+    result = response.text
+except Exception as e:
+    result = f"AI ERROR: {str(e)}"
+    
     # память пользователя
     if data.user_id not in USER_MEMORY:
         USER_MEMORY[data.user_id] = []
