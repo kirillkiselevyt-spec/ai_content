@@ -9,19 +9,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v3
 
-      # Создаем временную чистую папку для публикации фронтенда
-       cruel - name: Prepare Frontend Artifacts
-        run: |
-          mkdir dist
-          cp index.html dist/
-          cp style.css dist/ || true
-          cp app.js dist/ || true
-
-      - name: Deploy to GitHub Pages
+      - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist # Публикуем ТОЛЬКО содержимое папки dist
+          publish_dir: .
