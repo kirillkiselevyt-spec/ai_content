@@ -1,35 +1,67 @@
 const API_URL = "https://ai-bot-backend-x5nr.onrender.com/generate";
 
-async function generate() {
-  const niche = document.getElementById("niche").value;
-  const audience = document.getElementById("audience").value;
-  const goal = document.getElementById("goal").value;
-  const style = document.getElementById("style").value;
+async function sendMessage() {
+  const input = document.getElementById("userInput");
+  const chat = document.getElementById("chat");
 
-  const prompt = `
-Ниша: ${niche}
-Аудитория: ${audience}
-Цель: ${goal}
-Стиль: ${style}
+  const text = input.value.trim();
+  if (!text) return;
 
-Сгенерируй текст под эти параметры.
-`;
+  // user message
+  addMessage(text, "user");
+  input.value = "";
 
   try {
     const res = await fetch(API_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ prompt })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: text })
     });
 
     const data = await res.json();
 
-    document.getElementById("output").innerText =
-      data.result || data.error || "Ошибка";
+    // защита от undefined / разных API форматов
+    const reply =
+      data?.text ||
+      data?.answer ||
+      data?.response ||
+      data?.result ||
+      "Ошибка: пустой ответ API";
+
+    addMessage(reply, "bot");
+
   } catch (err) {
-    document.getElementById("output").innerText =
-      "Ошибка: " + err.message;
+    addMessage("Ошибка: " + err.message, "bot");
   }
 }
+
+function addMessage(text, type) {
+  const chat = document.getElementById("chat");
+
+  const div = document.createElement("div");
+  div.classList.add("message", type);
+  div.textContent = text;
+
+  // кнопка копирования только для бота
+  if (type === "bot") {
+    const btn = document.createElement("button");
+    btn.textContent = "Copy";
+    btn.classList.add("copy-btn");
+
+    btn.onclick = () => {
+      navigator.clipboard.writeText(text);
+      btn.textContent = "✓";
+      setTimeout(() => (btn.textContent = "Copy"), 1000);
+    };
+
+    div.appendChild(btn);
+  }
+
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+/* ENTER отправка */
+document.getElementById("userInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
