@@ -1,4 +1,4 @@
-const API_URL = "https://ai-bot-backend-x5nr.onrender.com";
+const API_URL = "https://ai-bot-backend-x5nr.onrender.com/generate";
 
 async function generate() {
     const niche = document.getElementById("niche").value;
