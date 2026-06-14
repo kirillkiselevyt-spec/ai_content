@@ -1,25 +1,32 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>AI Content Bot</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>AI Content Generator</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
-  <h1>AI Content Generator</h1>
+    <h1>AI Content Generator</h1>
 
-  <input id="niche" placeholder="Ниша">
-  <input id="goal" placeholder="Цель">
-  <input id="tone" placeholder="Тон">
-  <input id="audience" placeholder="ЦА">
+    <input id="niche" placeholder="Ниша (например: фитнес)">
+    <input id="audience" placeholder="Аудитория (например: мужчины 25-35)">
+    <input id="goal" placeholder="Цель (например: продажи)">
+    
+    <select id="style">
+        <option value="официальный">Официальный</option>
+        <option value="юмористический">Юмористический</option>
+        <option value="продающий">Продающий</option>
+        <option value="экспертный">Экспертный</option>
+    </select>
 
-  <button onclick="generate()">Сгенерировать</button>
+    <button onclick="generate()">Сгенерировать</button>
 
-  <pre id="result"></pre>
+    <pre id="result"></pre>
 </div>
 
 <script src="app.js"></script>
+
 </body>
 </html>
