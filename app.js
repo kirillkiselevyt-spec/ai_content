@@ -1,5 +1,6 @@
 const API_URL = "https://ai-bot-backend-x5nr.onrender.com";
 
+// Инициализация или получение ID пользователя для хранения в БД
 function getOrCreateUserId() {
   let userId = localStorage.getItem("ai_generator_user_id");
   if (!userId) {
@@ -9,67 +10,78 @@ function getOrCreateUserId() {
   return userId;
 }
 
-// Переключение панели истории (открыть/закрыть)
+// Управление кастомным выпадающим списком
+function toggleSelect(event) {
+  event.stopPropagation();
+  document.getElementById("custom-select-wrapper").parentNode.querySelector('.custom-select-wrapper').classList.toggle("open");
+}
+
+function selectOption(element) {
+  const value = element.getAttribute("data-value");
+  const label = element.textContent;
+  
+  document.getElementById("style").value = value;
+  document.getElementById("selected-style-label").textContent = label;
+  
+  document.querySelectorAll(".custom-option").forEach(opt => opt.classList.remove("selected"));
+  element.classList.add("selected");
+}
+
+// Закрывать селект при клике в любое другое место экрана
+document.addEventListener("click", () => {
+  document.querySelectorAll(".custom-select-wrapper").forEach(w => w.classList.remove("open"));
+});
+
+// Работа с логом истории запросов
 async function toggleHistory() {
   const panel = document.getElementById("history-panel");
   panel.classList.toggle("open");
-
-  // Если панель открылась, загружаем свежие данные из базы данных
   if (panel.classList.contains("open")) {
     await fetchHistory();
   }
 }
 
-// Запрос истории с бэкенда
 async function fetchHistory() {
   const contentDiv = document.getElementById("history-content");
   const userId = getOrCreateUserId();
 
   try {
     const response = await fetch(`${API_URL}/history/${userId}`);
-    if (!response.ok) throw new Error("Ошибка загрузки");
+    if (!response.ok) throw new Error();
 
     const data = await response.json();
-    contentDiv.innerHTML = ""; // Очищаем заглушку загрузки
+    contentDiv.innerHTML = "";
 
-    if (!data.history || data.history.trim() === "" || data.history === "[]") {
-      contentDiv.innerHTML = '<p class="empty-msg">У вас пока нет сохраненных генераций.</p>';
+    if (!data.history || data.history.trim() === "") {
+      contentDiv.innerHTML = '<p class="empty-msg">История пуста.</p>';
       return;
     }
 
-    // Парсим текстовый лог истории на блоки
     const blocks = data.history.split("--- Новый запрос ---");
-    
     blocks.forEach(block => {
       if (!block.trim()) return;
-
-      // Извлекаем текст запроса и ответа
       const promptMatch = block.match(/Запрос:([\s\S]*?)(?=Ответ:|$)/);
       const resultMatch = block.match(/Ответ:([\s\S]*?)$/);
 
       if (promptMatch) {
         const itemDiv = document.createElement("div");
         itemDiv.className = "history-item";
-
-        const promptTxt = promptMatch[1].trim();
-        const resultTxt = resultMatch ? resultMatch[1].trim() : "Нет ответа";
-
+        const pTxt = promptMatch[1].trim().split('\n')[0];
+        const rTxt = resultMatch ? resultMatch[1].trim() : "...";
+        
         itemDiv.innerHTML = `
-          <div class="history-item-prompt">📋 ${promptTxt.split('\n')[0]}...</div>
-          <div class="history-item-result">${resultTxt}</div>
+          <div class="history-item-prompt">${pTxt}</div>
+          <div class="history-item-result">${rTxt}</div>
         `;
-        // Добавляем новые элементы наверх списка
         contentDiv.insertBefore(itemDiv, contentDiv.firstChild);
       }
     });
-
-  } catch (err) {
-    console.error(err);
-    contentDiv.innerHTML = '<p class="empty-msg" style="color: #ff453a;">❌ Не удалось загрузить историю запросов.</p>';
+  } catch (_) {
+    contentDiv.innerHTML = '<p class="empty-msg" style="color: #e74c3c;">Не удалось загрузить историю.</p>';
   }
 }
 
-// Основная функция генерации
+// Функция генерации контента
 async function generate() {
   const niche    = document.getElementById("niche").value.trim();
   const audience = document.getElementById("audience").value.trim();
@@ -82,16 +94,16 @@ async function generate() {
   }
 
   const prompt = `
-Напиши контент для следующего запроса:
 Ниша: ${niche}
 Целевая аудитория: ${audience}
 Цель: ${goal}
-Стиль написания: ${styleLabel(style)}
+Стиль: ${styleLabel(style)}
 `.trim();
 
   setLoading(true);
   showOutput("⏳ Генерируем текст...", false);
 
+  // Исправлено: теперь отправляем полноценный JSON со всеми полями, которые требует бэкенд
   const payload = {
     user_id: getOrCreateUserId(),
     prompt: prompt,
@@ -107,20 +119,15 @@ async function generate() {
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-      showOutput("❌ Ошибка при отправке запроса на бэкенд.", true);
-      return;
-    }
-
     const data = await response.json();
-    if (data.result) {
+    
+    if (response.ok && data.result) {
       showOutput(data.result, false);
     } else {
-      showOutput("❌ Сервер вернул пустой ответ.", true);
+      showOutput(`❌ Ошибка: ${data.detail || "Пустой ответ сервера"}`, true);
     }
   } catch (err) {
-    console.error(err);
-    showOutput("❌ Не удалось подключиться к серверу.", true);
+    showOutput("❌ Ошибка соединения с сервером.", true);
   } finally {
     setLoading(false);
   }
@@ -143,3 +150,7 @@ function setLoading(isLoading) {
   btn.disabled = isLoading;
   btn.textContent = isLoading ? "Генерируем..." : "Сгенерировать";
 }
+
+// Привязываем кастомный селект к глобальной области видимости
+window.toggleSelect = toggleSelect;
+window.selectOption = selectOption;
