@@ -1,290 +1,69 @@
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 body {
   font-family: Arial, sans-serif;
-  background: #111113;
+  background: #111;
   color: #fff;
   display: flex;
   justify-content: center;
-  padding: 60px 20px;
-  position: relative;
-  overflow-x: hidden;
-  min-height: 100vh;
+  padding: 40px;
 }
 
 .container {
-  width: 100%;
-  max-width: 420px;
+  width: 400px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  background: #1a1a1e;
-  padding: 30px 24px;
-  border-radius: 16px;
-  border: 1px solid #2c2c30;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  gap: 10px;
 }
 
-h1 {
-  font-size: 26px;
-  text-align: center;
-  font-weight: bold;
-}
-
-.subtitle {
-  font-size: 13px;
-  color: #666;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-label {
-  font-size: 13px;
-  color: #aaa;
-  margin-bottom: -4px;
-  font-weight: 500;
-}
-
-input, .custom-select-trigger, button {
-  padding: 12px 14px;
-  border-radius: 8px;
-  border: 1px solid #2c2c30;
+input, select, button {
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
   font-size: 14px;
 }
 
-input {
-  background: #222226;
-  color: #fff;
-  outline: none;
-  transition: border-color 0.2s;
+input, select {
+  background: #ffffff;
+  color: #000000;
 }
 
-input:focus {
-  border-color: #4CAF50;
-}
-
-input::placeholder {
-  color: #555;
-}
-
-/* ── ГАРАНТИРОВАННО ТЕМНЫЙ КАСТОМНЫЙ СЕЛЕКТ ── */
-.custom-select-wrapper {
-  position: relative;
-  user-select: none;
-}
-
-.custom-select-trigger {
-  background: #222226;
-  color: #fff;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* Стилизация выпадающего списка под темную тему */
+select {
+  background-color: #222 !important;
+  color: #fff !important;
+  border: 1px solid #444;
   cursor: pointer;
-  transition: border-color 0.2s;
+  appearance: none; /* Убираем системную стрелочку */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+  padding-right: 30px;
 }
 
-.custom-select-wrapper.open .custom-select-trigger {
-  border-color: #4CAF50;
-}
-
-.custom-select-trigger .arrow {
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid #fff;
-  transition: transform 0.2s ease;
-}
-
-.custom-select-wrapper.open .arrow {
-  transform: rotate(180deg);
-}
-
-.custom-options {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  background: #1e1e22;
-  border: 1px solid #333339;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-  display: none;
-  z-index: 100;
-  overflow: hidden;
-}
-
-.custom-select-wrapper.open .custom-options {
-  display: block;
-}
-
-.custom-option {
-  padding: 12px 14px;
-  color: #ccc;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-
-.custom-option:hover {
-  background: #2a2a30;
+/* Стилизация вариантов внутри выпадающего списка */
+select option {
+  background-color: #222;
   color: #fff;
 }
 
-.custom-option.selected {
-  background: #222226;
-  color: #4CAF50;
-  font-weight: bold;
-}
-
-/* Кнопка отправки */
 button {
   background: #4CAF50;
   color: white;
   cursor: pointer;
   font-weight: bold;
-  margin-top: 8px;
-  transition: background 0.2s ease, opacity 0.2s;
-}
-
-button:hover:not(:disabled) {
-  background: #45a049;
+  transition: background 0.2s ease;
 }
 
 button:disabled {
-  background: #2c2c30;
-  color: #555;
+  background: #555;
   cursor: not-allowed;
 }
 
 pre {
-  background: #111113;
-  border: 1px solid #2c2c30;
+  background: #222;
   padding: 15px;
   min-height: 100px;
-  border-radius: 8px;
+  border-radius: 6px;
   white-space: pre-wrap; 
   word-wrap: break-word;
-  color: #eee;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-/* ── ТРИ ВЕРТИКАЛЬНЫЕ ПОЛОСОК (ИСТОРИЯ) ── */
-.history-trigger {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: transparent;
-  border: 1px solid transparent;
-  display: flex;
-  flex-direction: row;
-  gap: 4px;
-  padding: 10px;
-  cursor: pointer;
-  z-index: 1000;
-}
-
-.history-trigger:hover {
-  background: #1a1a1e;
-  border-color: #2c2c30;
-}
-
-.history-trigger .bar {
-  width: 3px;
-  height: 18px;
-  background-color: #888;
-  border-radius: 2px;
-  transition: background-color 0.2s;
-}
-
-.history-trigger:hover .bar {
-  background-color: #4CAF50;
-}
-
-/* ── ВЫЕЗЖАЮЩАЯ СВЕРХУ ПАНЕЛЬ ── */
-.history-panel {
-  position: fixed;
-  top: -420px;
-  left: 0;
-  width: 100%;
-  height: 380px;
-  background: #161619;
-  border-bottom: 1px solid #2c2c30;
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-  padding: 24px 40px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-  transition: top 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.history-panel.open {
-  top: 0;
-}
-
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  border-bottom: 1px solid #2c2c30;
-  padding-bottom: 12px;
-}
-
-.history-header h2 {
-  font-size: 18px;
-  color: #4CAF50;
-}
-
-.history-header .close-btn {
-  background: #222226;
-  padding: 6px 12px;
-  font-size: 12px;
-}
-
-.history-content {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.history-item {
-  background: #1a1a1e;
-  border: 1px solid #2c2c30;
-  border-radius: 8px;
-  padding: 14px;
-}
-
-.history-item-prompt {
-  color: #666;
-  font-size: 12px;
-  font-style: italic;
-  margin-bottom: 6px;
-}
-
-.history-item-result {
-  color: #ddd;
-  font-size: 13px;
-  white-space: pre-wrap;
-}
-
-.empty-msg {
-  color: #444;
-  text-align: center;
-  margin-top: 40px;
-  font-style: italic;
-}
-
-.history-content::-webkit-scrollbar {
-  width: 6px;
-}
-.history-content::-webkit-scrollbar-thumb {
-  background: #2c2c30;
-  border-radius: 3px;
 }
