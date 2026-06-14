@@ -7,13 +7,10 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   background: #0f1115;
   color: white;
-
-  /* защита от свайпов iOS */
   overscroll-behavior: none;
-  touch-action: manipulation;
 }
 
 .app {
@@ -24,57 +21,53 @@ html, body {
 
 /* HEADER */
 .header {
-  padding: 12px;
+  padding: 10px;
   text-align: center;
   background: #161a22;
-  border-bottom: 1px solid #2a2f3a;
+}
+
+/* FORM */
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px;
+  background: #141824;
+}
+
+.form input, .form select {
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  outline: none;
 }
 
 /* CHAT */
 .chat-container {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
-/* message bubble */
+/* MESSAGE */
 .message {
   padding: 10px;
   border-radius: 10px;
   max-width: 90%;
-  white-space: pre-wrap;
   word-break: break-word;
-  overflow-wrap: break-word;
 }
 
-/* user */
 .user {
   background: #2b6cff;
   align-self: flex-end;
 }
 
-/* bot */
 .bot {
   background: #1c2230;
   align-self: flex-start;
-  position: relative;
-}
-
-/* copy button */
-.copy-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  font-size: 12px;
-  padding: 3px 6px;
-  cursor: pointer;
-  border: none;
-  border-radius: 5px;
-  background: #444;
-  color: white;
 }
 
 /* INPUT */
@@ -82,34 +75,27 @@ html, body {
   display: flex;
   padding: 10px;
   background: #161a22;
-  border-top: 1px solid #2a2f3a;
 }
 
 .input-area input {
   flex: 1;
   padding: 10px;
   border: none;
-  outline: none;
   border-radius: 6px;
 }
 
 .input-area button {
   margin-left: 10px;
-  padding: 10px 14px;
-  border: none;
-  border-radius: 6px;
+  padding: 10px;
   background: #2b6cff;
+  border: none;
   color: white;
-  cursor: pointer;
+  border-radius: 6px;
 }
 
-/* MOBILE ADAPT */
+/* MOBILE */
 @media (max-width: 600px) {
-  .message {
-    max-width: 100%;
-  }
-
-  .input-area button {
-    padding: 10px;
+  .form {
+    grid-template-columns: 1fr;
   }
 }
