@@ -6,7 +6,7 @@ import requests
 
 app = FastAPI()
 
-# CORS для GitHub Pages
+# CORS (для GitHub Pages / браузера)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,9 +16,11 @@ app.add_middleware(
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# актуальная модель
-GEMINI_MODEL = "gemini-1.5-flash"
+# ⚠️ безопасная дефолтная модель (поменяешь после /models)
+GEMINI_MODEL = "gemini-pro"
 
+
+# ---------- REQUEST MODEL ----------
 class RequestData(BaseModel):
     user_id: str
     niche: str
@@ -27,11 +29,13 @@ class RequestData(BaseModel):
     style: str
 
 
+# ---------- ROOT ----------
 @app.get("/")
 def root():
     return {"status": "ok"}
 
 
+# ---------- DEBUG KEY ----------
 @app.get("/debug")
 def debug():
     return {
@@ -40,6 +44,15 @@ def debug():
     }
 
 
+# ---------- LIST MODELS (ВАЖНО ДЛЯ ТЕБЯ) ----------
+@app.get("/models")
+def list_models():
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}"
+    r = requests.get(url)
+    return r.json()
+
+
+# ---------- PROMPT ----------
 def build_prompt(data: RequestData):
     return f"""
 Ты — эксперт по вирусному и продающему контенту.
@@ -50,12 +63,13 @@ def build_prompt(data: RequestData):
 Стиль: {data.style}
 
 Сгенерируй:
-- 5 вирусных идей контента
+- 5 вирусных идей
 - 3 продающих поста
-- 5 hooks (цепляющих заголовков)
+- 5 цепляющих заголовков
 """
 
 
+# ---------- GENERATE ----------
 @app.post("/generate")
 def generate(data: RequestData):
 
@@ -67,40 +81,34 @@ def generate(data: RequestData):
     try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
 
-        response = requests.post(
-            url,
-            json={
-                "contents": [
-                    {
-                        "parts": [
-                            {"text": prompt}
-                        ]
-                    }
-                ]
-            },
-            timeout=40
-        )
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": prompt}
+                    ]
+                }
+            ]
+        }
 
+        response = requests.post(url, json=payload, timeout=40)
+
+        # если API упал
         if response.status_code != 200:
             return {
                 "error": "Gemini API error",
                 "status_code": response.status_code,
-                "text": response.text
+                "details": response.text
             }
 
         result = response.json()
 
         # безопасное извлечение текста
-        text = (
-            result.get("candidates", [{}])[0]
-            .get("content", {})
-            .get("parts", [{}])[0]
-            .get("text", None)
-        )
-
-        if not text:
+        try:
+            text = result["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception:
             return {
-                "error": "No text in response",
+                "error": "Bad Gemini response format",
                 "raw": result
             }
 
