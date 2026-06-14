@@ -5,7 +5,7 @@ import google.generativeai as genai
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-# Импортируем модули базы данных
+# Импортируем модули для работы с базой данных
 from database import SessionLocal, engine, Base
 from models import User
 
@@ -14,7 +14,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# Разрешаем CORS, чтобы фронтенд мог беспрепятственно общаться с бэкендом
+# Разрешаем CORS, чтобы фронтенд на GitHub Pages мог общаться с бэкендом на Render
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,7 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Функция (Dependency) для безопасного управления сессиями БД
+# Функция (Dependency) для управления сессиями БД
 def get_db():
     db = SessionLocal()
     try:
@@ -36,10 +36,10 @@ api_key = os.getenv("GEMINI_API_KEY")
 if api_key:
     genai.configure(api_key=api_key)
 
-# Самая актуальная и быстрая модель
+# Рабочая актуальная модель
 MODEL_NAME = "gemini-2.5-flash"
 
-# Спецификация входных данных (DTO)
+# Описываем структуру входящих данных. Теперь мы принимаем не только промпт, но и метаданные
 class RequestData(BaseModel):
     user_id: str
     prompt: str
@@ -50,61 +50,52 @@ class RequestData(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status": "ok", "database": "connected", "model": MODEL_NAME}
+    return {"status": "ok"}
 
 
 @app.post("/generate")
 def generate(data: RequestData, db: Session = Depends(get_db)):
     if not os.getenv("GEMINI_API_KEY"):
-        raise HTTPException(
-            status_code=500, 
-            detail="Ошибка конфигурации: на сервере Render не задан GEMINI_API_KEY."
-        )
+        raise HTTPException(status_code=500, detail="Ключ API Gemini не настроен на сервере.")
 
     try:
-        # 1. Работа со слоем данных и историей пользователя
+        # 1. Запись в базу данных и работа с историей
         user = db.query(User).filter(User.user_id == data.user_id).first()
         
         if not user:
-            # Создаем нового пользователя, если он зашел впервые
+            # Если пользователя нет в БД, создаем новую запись
             user = User(
                 user_id=data.user_id,
                 niche=data.niche,
                 audience=data.audience,
                 style=data.style,
-                history=f"[История создана]\nЗапрос: {data.prompt}\n"
+                history=f"Запрос: {data.prompt}\n"
             )
             db.add(user)
         else:
-            # Обновляем метаданные существующего пользователя и дополняем лог истории
+            # Если пользователь существует, обновляем текущие параметры и добавляем историю
             user.niche = data.niche
             user.audience = data.audience
             user.style = data.style
-            user.history = (user.history or "") + f"\n--- Следующий запрос ---\nЗапрос: {data.prompt}\n"
+            user.history = (user.history or "") + f"--- \nЗапрос: {data.prompt}\n"
         
-        # 2. Инференс в нейросеть Gemini
+        # 2. Генерация текста через Gemini
         model = genai.GenerativeModel(MODEL_NAME)
         response = model.generate_content(data.prompt)
 
         if hasattr(response, "text") and response.text:
             generated_text = response.text
             
-            # Дописываем успешный ответ ИИ в историю пользователя
-            user.history += f"Ответ ИИ:\n{generated_text}\n"
+            # Дописываем сгенерированный ответ в историю пользователя
+            user.history += f"Ответ: {generated_text}\n"
             
-            # Фиксируем транзакцию в SQLite
+            # Сохраняем все изменения в базу данных
             db.commit()
             
             return {"result": generated_text}
         else:
-            raise HTTPException(
-                status_code=502, 
-                detail="Модель Gemini вернула пустой ответ или контент заблокирован фильтрами."
-            )
+            raise HTTPException(status_code=502, detail="Gemini вернул пустой ответ.")
 
     except Exception as e:
-        db.rollback()  # Откатываем изменения в БД при любом сбое
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Внутренняя ошибка сервера: {str(e)}"
-        )
+        db.rollback()  # Откатываем транзакцию в случае ошибки
+        raise HTTPException(status_code=500, detail=f"Ошибка сервера: {str(e)}")
