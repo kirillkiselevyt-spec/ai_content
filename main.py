@@ -15,6 +15,9 @@ app.add_middleware(
 
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
+# ✅ ПРАВИЛЬНЫЙ ENDPOINT DeepSeek
+DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
+
 
 class RequestData(BaseModel):
     user_id: str
@@ -29,90 +32,88 @@ def root():
     return {"status": "ok"}
 
 
-@app.get("/debug-key")
-def debug_key():
+@app.get("/debug")
+def debug():
     return {
         "key_exists": bool(DEEPSEEK_API_KEY),
         "key_preview": DEEPSEEK_API_KEY[:6] if DEEPSEEK_API_KEY else None
     }
 
 
-def call_deepseek(model: str, prompt: str):
-    """универсальный вызов DeepSeek"""
+def build_prompt(data: RequestData):
+    return f"""
+Ты — эксперт по маркетингу и вирусному контенту.
+
+Ниша: {data.niche}
+Аудитория: {data.audience}
+Цель: {data.goal}
+Стиль: {data.style}
+
+Сгенерируй:
+- 5 вирусных идей контента
+- 3 продающих поста
+- 3 hooks (зацепки для первых секунд)
+"""
+
+
+def call_deepseek(prompt: str):
     return requests.post(
-        "https://api.deepseek.com/v1/chat/completions",
+        DEEPSEEK_URL,
         headers={
             "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
             "Content-Type": "application/json"
         },
         json={
-            "model": model,
+            "model": "deepseek-chat",
             "messages": [
-                {
-                    "role": "system",
-                    "content": "Ты эксперт по вирусному и продающему контенту"
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "system", "content": "Ты маркетинговый AI-ассистент."},
+                {"role": "user", "content": prompt}
             ],
             "temperature": 0.8
         },
-        timeout=30
+        timeout=40
     )
 
 
 @app.post("/generate")
 def generate(data: RequestData):
 
-    prompt = f"""
-Ниша: {data.niche}
-Аудитория: {data.audience}
-Цель: {data.goal}
-Стиль: {data.style}
-
-Сгенерируй 5 идей вирусного контента.
-"""
-
     if not DEEPSEEK_API_KEY:
-        return {"result": "ERROR: missing API key"}
+        return {"error": "Missing DEEPSEEK_API_KEY"}
 
-    # 🔥 список моделей (авто fallback)
-    models = [
-        "deepseek-chat",
-        "deepseek-reasoner",
-        "deepseek-v3"
-    ]
+    prompt = build_prompt(data)
 
-    last_error = None
+    try:
+        response = call_deepseek(prompt)
 
-    for model in models:
-        try:
-            response = call_deepseek(model, prompt)
+        # 🔥 ВАЖНО: диагностика (чтобы больше не гадать)
+        if response.status_code != 200:
+            return {
+                "error": "DeepSeek API error",
+                "status_code": response.status_code,
+                "text": response.text
+            }
 
-            if response.status_code == 200:
-                data_json = response.json()
+        result = response.json()
 
-                if "choices" in data_json:
-                    return {
-                        "result": data_json["choices"][0]["message"]["content"],
-                        "model_used": model
-                    }
+        # ✔ безопасное извлечение
+        content = (
+            result.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", None)
+        )
 
-                last_error = data_json
+        if not content:
+            return {
+                "error": "No content in response",
+                "raw": result
+            }
 
-            else:
-                last_error = {
-                    "status_code": response.status_code,
-                    "text": response.text
-                }
+        return {
+            "result": content
+        }
 
-        except Exception as e:
-            last_error = str(e)
-
-    # если все модели упали
-    return {
-        "result": "ALL MODELS FAILED",
-        "error": last_error
-    }
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
