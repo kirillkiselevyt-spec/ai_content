@@ -6,7 +6,6 @@ import requests
 
 app = FastAPI()
 
-# CORS (для GitHub Pages / браузера)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,11 +15,10 @@ app.add_middleware(
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# ⚠️ безопасная дефолтная модель (поменяешь после /models)
-GEMINI_MODEL = "gemini-pro"
+# ✅ ВАЖНО: твоя реальная модель
+GEMINI_MODEL = "models/gemini-2.5-flash"
 
 
-# ---------- REQUEST MODEL ----------
 class RequestData(BaseModel):
     user_id: str
     niche: str
@@ -29,33 +27,29 @@ class RequestData(BaseModel):
     style: str
 
 
-# ---------- ROOT ----------
 @app.get("/")
 def root():
     return {"status": "ok"}
 
 
-# ---------- DEBUG KEY ----------
+@app.get("/models")
+def models():
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}"
+    return requests.get(url).json()
+
+
 @app.get("/debug")
 def debug():
     return {
         "key_exists": bool(GEMINI_API_KEY),
-        "key_preview": GEMINI_API_KEY[:6] if GEMINI_API_KEY else None
+        "key_preview": GEMINI_API_KEY[:6] if GEMINI_API_KEY else None,
+        "model": GEMINI_MODEL
     }
 
 
-# ---------- LIST MODELS (ВАЖНО ДЛЯ ТЕБЯ) ----------
-@app.get("/models")
-def list_models():
-    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}"
-    r = requests.get(url)
-    return r.json()
-
-
-# ---------- PROMPT ----------
 def build_prompt(data: RequestData):
     return f"""
-Ты — эксперт по вирусному и продающему контенту.
+Ты эксперт по вирусному и продающему контенту.
 
 Ниша: {data.niche}
 Аудитория: {data.audience}
@@ -69,54 +63,44 @@ def build_prompt(data: RequestData):
 """
 
 
-# ---------- GENERATE ----------
 @app.post("/generate")
 def generate(data: RequestData):
 
     if not GEMINI_API_KEY:
         return {"error": "Missing GEMINI_API_KEY"}
 
-    prompt = build_prompt(data)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+
+    payload = {
+        "contents": [
+            {
+                "parts": [{"text": build_prompt(data)}]
+            }
+        ]
+    }
 
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
-
-        payload = {
-            "contents": [
-                {
-                    "parts": [
-                        {"text": prompt}
-                    ]
-                }
-            ]
-        }
-
         response = requests.post(url, json=payload, timeout=40)
 
-        # если API упал
         if response.status_code != 200:
             return {
                 "error": "Gemini API error",
-                "status_code": response.status_code,
+                "status": response.status_code,
                 "details": response.text
             }
 
         result = response.json()
 
-        # безопасное извлечение текста
+        # безопасный парсинг
         try:
             text = result["candidates"][0]["content"]["parts"][0]["text"]
         except Exception:
             return {
-                "error": "Bad Gemini response format",
+                "error": "Invalid Gemini response structure",
                 "raw": result
             }
 
-        return {
-            "text": text
-        }
+        return {"text": text}
 
     except Exception as e:
-        return {
-            "error": str(e)
-        }
+        return {"error": str(e)}
