@@ -1,45 +1,67 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 import google.generativeai as genai
 import os
-from fastapi.middleware.cors import CORSMiddleware
+
+from database import SessionLocal, engine
+from models import Base, User
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# CORS (чтобы GitHub Pages работал)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# API KEY
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 class RequestData(BaseModel):
+    user_id: str
     niche: str
     audience: str
     goal: str
     style: str
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 @app.post("/generate")
-async def generate(data: RequestData):
-    model = genai.GenerativeModel("gemini-pro")
+def generate(data: RequestData, db=Depends(get_db)):
+
+    user = db.query(User).filter(User.user_id == data.user_id).first()
+
+    if not user:
+        user = User(
+            user_id=data.user_id,
+            niche=data.niche,
+            audience=data.audience,
+            style=data.style,
+            history=""
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
 
     prompt = f"""
-    Ты профессиональный маркетолог.
+    Ты маркетолог и креатор контента.
 
-    Ниша: {data.niche}
-    Целевая аудитория: {data.audience}
-    Цель контента: {data.goal}
-    Стиль: {data.style}
+    Пользователь:
+    - Ниша: {data.niche}
+    - Аудитория: {data.audience}
+    - Цель: {data.goal}
+    - Стиль: {data.style}
 
-    Сгенерируй 5 вирусных идей контента.
-    Сделай их конкретными, цепляющими и применимыми.
+    История пользователя:
+    {user.history}
+
+    Сгенерируй 5 новых вирусных идей.
     """
 
+    model = genai.GenerativeModel("gemini-pro")
     response = model.generate_content(prompt)
+
+    user.history += "\n" + response.text
+    db.commit()
 
     return {"result": response.text}
