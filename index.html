@@ -1,55 +1,61 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI Bot</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Generator Pro</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-  <div class="app">
 
-    <header class="header">
-      <h1>AI Assistant</h1>
-    </header>
+    <div class="app-container">
+        <div class="app-header">
+            <h1 class="app-title">AI Generator</h1>
+            <div class="app-subtitle">Премиальный генератор контента</div>
+        </div>
 
-    <!-- НАСТРОЙКИ -->
-    <section class="form">
+        <form id="generatorForm">
+            <div class="field-group">
+                <label for="niche">Ниша <span>(минимум 3 варианта)</span></label>
+                <input type="text" id="niche" placeholder="Выберите вашу нишу" required>
+            </div>
 
-      <select id="niche">
-        <option value="">Ниша (выбери)</option>
-        <option>Маркетинг</option>
-        <option>Образование</option>
-        <option>Бизнес</option>
-      </select>
+            <div class="field-group">
+                <label for="audience">Аудитория</label>
+                <input type="text" id="audience" placeholder="например: новички 18-25" required>
+            </div>
 
-      <input id="audience" placeholder="Аудитория (например: подростки 16-20)" />
+            <div class="field-group">
+                <label for="target">Цель</label>
+                <input type="text" id="target" placeholder="например: увеличить продажи на 20%" required>
+            </div>
 
-      <input id="goal" placeholder="Цель (например: увеличить продажи на 20%)" />
+            <div class="field-group">
+                <label for="style">Стиль</label>
+                <select id="style">
+                    <option value="official">Официальный</option>
+                    <option value="friendly">Дружелюбный</option>
+                    <option value="creative">Креативный</option>
+                    <option value="minimal">Минималистичный</option>
+                </select>
+            </div>
 
-      <select id="style">
-        <option value="">Стиль</option>
-        <option>Официальный</option>
-        <option>Простой</option>
-        <option>Креативный</option>
-        <option>Технический</option>
-        <option>Разговорный</option>
-      </select>
+            <button type="submit" class="submit-btn">Сгенерировать</button>
+        </form>
 
-    </section>
+        <div class="result-container" id="resultContainer">
+            <div class="result-header">
+                <div class="result-title">Результат генерации</div>
+                <button class="copy-btn" id="copyBtn">
+                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span id="copyBtnText">Скопировать</span>
+                </button>
+            </div>
+            <div class="result-box" id="resultBox">
+                </div>
+        </div>
+    </div>
 
-    <!-- ЧАТ -->
-    <main class="chat-container" id="chat"></main>
-
-    <!-- ВВОД -->
-    <section class="input-area">
-      <input id="userInput" type="text" placeholder="Введите запрос..." />
-      <button onclick="sendMessage()">Отправить</button>
-    </section>
-
-  </div>
-
-  <script src="app.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
