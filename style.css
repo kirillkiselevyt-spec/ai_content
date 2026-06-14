@@ -1,210 +1,280 @@
+/* CSS Reset & Variable Design System */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg-color: #000000;
+    --container-bg: linear-gradient(135deg, rgba(28, 28, 30, 0.75) 0%, rgba(18, 18, 18, 0.9) 100%);
+    --accent-blue: #0071e3;
+    --accent-blue-hover: #1482f0;
+    --text-main: #f5f5f7;
+    --text-secondary: #86868b;
+    --text-placeholder: #48484a;
+    --border-color: rgba(255, 255, 255, 0.12);
+    --input-bg: rgba(255, 255, 255, 0.04);
+    --input-bg-focus: rgba(255, 255, 255, 0.08);
+    --apple-easing: cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background: #111;
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  padding: 60px 20px;
-  position: relative;
-  overflow-x: hidden;
-  min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    padding: 40px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
 
-.container {
-  width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 20px;
+/* Главная карточка с размытием */
+.app-container {
+    width: 100%;
+    max-width: 500px;
+    background: var(--container-bg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 36px 28px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInContainer 0.6s var(--apple-easing) forwards;
 }
 
-input, .custom-select-trigger, button {
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
-  font-size: 14px;
+@keyframes fadeInContainer {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-input {
-  background: #ffffff;
-  color: #000000;
+.app-header {
+    text-align: center;
+    margin-bottom: 32px;
 }
 
-/* ── ТЕМНЫЙ КАСТОМНЫЙ СЕЛЕКТ ── */
-.custom-select-wrapper {
-  position: relative;
-  user-select: none;
+.app-title {
+    font-size: 26pt;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+    background: linear-gradient(180deg, #ffffff 0%, #a1a1a6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.custom-select-trigger {
-  background: #222;
-  color: #fff;
-  border: 1px solid #444;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
+.app-subtitle {
+    font-size: 11pt;
+    color: var(--text-secondary);
+    font-weight: 400;
 }
 
-.custom-select-trigger .arrow {
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid #fff;
+/* Каскадное появление полей ввода */
+.field-group {
+    margin-bottom: 20px;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeInField 0.5s var(--apple-easing) forwards;
 }
 
-.custom-options {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: #222;
-  border: 1px solid #444;
-  border-radius: 6px;
-  display: none;
-  z-index: 100;
-  margin-top: 5px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+.field-group:nth-child(1) { animation-delay: 0.1s; }
+.field-group:nth-child(2) { animation-delay: 0.15s; }
+.field-group:nth-child(3) { animation-delay: 0.2s; }
+.field-group:nth-child(4) { animation-delay: 0.25s; }
+
+@keyframes fadeInField {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.custom-select-wrapper.open .custom-options {
-  display: block;
+label {
+    display: block;
+    font-size: 10.5pt;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 8px;
+    padding-left: 2px;
 }
 
-.custom-option {
-  padding: 10px;
-  color: #fff;
-  cursor: pointer;
+label span {
+    color: var(--text-secondary);
+    font-size: 9pt;
+    font-weight: 400;
+    margin-left: 4px;
 }
 
-.custom-option:hover {
-  background: #333;
+input[type="text"], input[list], select {
+    width: 100%;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 11pt;
+    color: #ffffff;
+    font-family: inherit;
+    outline: none;
+    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.custom-option.selected {
-  color: #4CAF50;
-  font-weight: bold;
+input[type="text"]:focus, input[list]:focus, select:focus {
+    background-color: var(--input-bg-focus);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
 }
 
-button {
-  background: #4CAF50;
-  color: white;
-  cursor: pointer;
-  font-weight: bold;
+input::placeholder {
+    color: var(--text-placeholder);
 }
 
-button:disabled {
-  background: #555;
-  cursor: not-allowed;
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 16px;
+    padding-right: 40px;
+    cursor: pointer;
 }
 
-pre {
-  background: #222;
-  padding: 15px;
-  min-height: 100px;
-  border-radius: 6px;
-  white-space: pre-wrap; 
-  word-wrap: break-word;
+/* Фирменная кнопка */
+.submit-btn {
+    width: 100%;
+    background: linear-gradient(180deg, #0077ed 0%, #006edb 100%);
+    border: 1px solid var(--accent-blue);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 12pt;
+    font-weight: 500;
+    padding: 16px;
+    cursor: pointer;
+    margin-top: 12px;
+    letter-spacing: -0.1px;
+    box-shadow: 0 4px 12px rgba(0, 113, 227, 0.15);
+    transition: all 0.2s var(--apple-easing);
 }
 
-/* ── ИКОНКА МЕНЮ (3 ВЕРТИКАЛЬНЫЕ ПОЛОСКИ) ── */
-.history-trigger {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: transparent;
-  display: flex;
-  flex-direction: row;
-  gap: 4px;
-  padding: 8px;
-  cursor: pointer;
-  z-index: 1000;
+.submit-btn:hover:not(:disabled) {
+    background: linear-gradient(180deg, var(--accent-blue-hover) 0%, #0077ed 100%);
+    box-shadow: 0 6px 16px rgba(0, 113, 227, 0.25);
 }
 
-.history-trigger .bar {
-  width: 3px;
-  height: 18px;
-  background-color: #fff;
-  border-radius: 1px;
-  transition: background-color 0.2s;
+.submit-btn:active:not(:disabled) {
+    transform: scale(0.99);
+    opacity: 0.95;
 }
 
-.history-trigger:hover .bar {
-  background-color: #4CAF50;
+.submit-btn:disabled {
+    background: #3a3a3c;
+    border-color: #2c2c2e;
+    color: #aeaeae;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
-/* ── ВСПЛЫВАЮЩАЯ ПАНЕЛЬ СВЕРХУ ── */
-.history-panel {
-  position: fixed;
-  top: -400px;
-  left: 0;
-  width: 100%;
-  height: 350px;
-  background: #181818;
-  border-bottom: 2px solid #333;
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-  padding: 20px 40px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  transition: top 0.4s ease-out;
+/* Блок результатов */
+.result-container {
+    margin-top: 32px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 28px;
+    display: none;
+    animation: fadeInContainer 0.5s var(--apple-easing) forwards;
 }
 
-.history-panel.open {
-  top: 0;
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
 }
 
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  border-bottom: 1px solid #333;
-  padding-bottom: 10px;
+.result-title {
+    font-size: 12pt;
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.history-header h2 {
-  font-size: 18px;
-  color: #4CAF50;
+.result-title::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    background-color: #30d158;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #30d158;
 }
 
-.history-header .close-btn {
-  background: #333;
-  padding: 6px 12px;
-  font-size: 12px;
+.result-title.error-state::before {
+    background-color: #ff453a;
+    box-shadow: 0 0 8px #ff453a;
 }
 
-.history-content {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* Кнопка копирования */
+.copy-btn {
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 9.5pt;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
 }
 
-.history-item {
-  background: #222;
-  border: 1px solid #333;
-  border-radius: 6px;
-  padding: 12px;
+.copy-btn:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
-.history-item-prompt {
-  color: #888;
-  font-size: 12px;
-  margin-bottom: 4px;
+.copy-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
-.history-item-result {
-  color: #eee;
-  font-size: 13px;
-  white-space: pre-wrap;
+/* Окно выдачи текста */
+.result-box {
+    background-color: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 20px;
+    min-height: 100px;
+    max-height: 350px;
+    overflow-y: auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 11pt;
+    line-height: 1.55;
+    color: #e8e8ed;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    word-break: break-word;
 }
 
-.empty-msg {
-  color: #555;
-  text-align: center;
-  margin-top: 40px;
-  font-style: italic;
+/* Премиальный тонкий скроллбар */
+.result-box::-webkit-scrollbar {
+    width: 6px;
+}
+.result-box::-webkit-scrollbar-track {
+    background: transparent;
+}
+.result-box::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
 }
