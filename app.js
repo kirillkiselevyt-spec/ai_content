@@ -1,6 +1,5 @@
-const API_URL = "https://ai-bot-backend-x5nr.onrender.com/generate";
+const API_URL = "https://ai-bot-backend-x5nr.onrender.com";
 
-// Получение или создание UUID пользователя в localStorage браузера
 function getOrCreateUserId() {
   let userId = localStorage.getItem("ai_generator_user_id");
   if (!userId) {
@@ -10,6 +9,78 @@ function getOrCreateUserId() {
   return userId;
 }
 
+// Исправлено открытие кастомного списка стилей
+function toggleSelect(event) {
+  event.stopPropagation();
+  document.getElementById("custom-select-wrapper").classList.toggle("open");
+}
+
+function selectOption(element) {
+  const value = element.getAttribute("data-value");
+  const label = element.textContent;
+  
+  document.getElementById("style").value = value;
+  document.getElementById("selected-style-label").textContent = label;
+  
+  document.querySelectorAll(".custom-option").forEach(opt => opt.classList.remove("selected"));
+  element.classList.add("selected");
+}
+
+document.addEventListener("click", () => {
+  const wrapper = document.getElementById("custom-select-wrapper");
+  if (wrapper) wrapper.classList.remove("open");
+});
+
+// Открытие панели истории запросов
+async function toggleHistory() {
+  const panel = document.getElementById("history-panel");
+  panel.classList.toggle("open");
+  if (panel.classList.contains("open")) {
+    await fetchHistory();
+  }
+}
+
+async function fetchHistory() {
+  const contentDiv = document.getElementById("history-content");
+  const userId = getOrCreateUserId();
+
+  try {
+    const response = await fetch(`${API_URL}/history/${userId}`);
+    if (!response.ok) throw new Error();
+
+    const data = await response.json();
+    contentDiv.innerHTML = "";
+
+    if (!data.history || data.history.trim() === "") {
+      contentDiv.innerHTML = '<p class="empty-msg">История запросов пуста.</p>';
+      return;
+    }
+
+    const blocks = data.history.split("--- Новый запрос ---");
+    blocks.forEach(block => {
+      if (!block.trim()) return;
+      const promptMatch = block.match(/Запрос:([\s\S]*?)(?=Ответ:|$)/);
+      const resultMatch = block.match(/Ответ:([\s\S]*?)$/);
+
+      if (promptMatch) {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "history-item";
+        const pTxt = promptMatch[1].trim().split('\n')[0];
+        const rTxt = resultMatch ? resultMatch[1].trim() : "...";
+        
+        itemDiv.innerHTML = `
+          <div class="history-item-prompt">${pTxt}</div>
+          <div class="history-item-result">${rTxt}</div>
+        `;
+        contentDiv.insertBefore(itemDiv, contentDiv.firstChild);
+      }
+    });
+  } catch (_) {
+    contentDiv.innerHTML = '<p class="empty-msg" style="color: #e74c3c;">Не удалось получить историю.</p>';
+  }
+}
+
+// Генерация контента
 async function generate() {
   const niche    = document.getElementById("niche").value.trim();
   const audience = document.getElementById("audience").value.trim();
@@ -21,71 +92,41 @@ async function generate() {
     return;
   }
 
-  const prompt = `
-Напиши контент для следующего запроса:
-
+  const promptText = `
 Ниша: ${niche}
 Целевая аудитория: ${audience}
 Цель: ${goal}
-Стиль написания: ${styleLabel(style)}
-
-Создай качественный, убедительный текст, полностью соответствующий указанным параметрам.
+Стиль: ${styleLabel(style)}
 `.trim();
 
   setLoading(true);
   showOutput("⏳ Генерируем текст...", false);
 
-  // Payload теперь включает метаданные и сгенерированный user_id для БД
-  const payload = {
-    user_id: getOrCreateUserId(),
-    prompt: prompt,
-    niche: niche,
-    audience: audience,
-    style: styleLabel(style)
-  };
-
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetch(`${API_URL}/generate`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: getOrCreateUserId(),
+        prompt: promptText
+      }),
     });
 
-    if (!response.ok) {
-      let errorDetail = `HTTP ${response.status}`;
-      try {
-        const errJson = await response.json();
-        errorDetail = errJson.detail || errorDetail;
-      } catch (_) {}
-      showOutput(`❌ Ошибка: ${errorDetail}`, true);
-      return;
-    }
-
     const data = await response.json();
-
-    if (data.result) {
+    if (response.ok && data.result) {
       showOutput(data.result, false);
     } else {
-      showOutput("❌ Сервер вернул пустой ответ.", true);
+      showOutput(`❌ Ошибка: ${data.error || "Неизвестная ошибка"}`, true);
     }
   } catch (err) {
-    console.error("Fetch error:", err);
-    showOutput("❌ Не удалось подключиться к серверу. Проверьте интернет или деплой бэкенда.", true);
+    showOutput("❌ Ошибка соединения с сервером.", true);
   } finally {
     setLoading(false);
   }
 }
 
 function styleLabel(value) {
-  const labels = {
-    formal:   "Официальный",
-    friendly: "Дружелюбный",
-    sales:    "Продающий",
-    creative: "Креативный",
-    minimal:  "Минимализм",
-  };
+  const labels = { formal: "Официальный", friendly: "Дружелюбный", sales: "Продающий", creative: "Креативный", minimal: "Минимализм" };
   return labels[value] || value;
 }
 
@@ -96,7 +137,7 @@ function showOutput(text, isError) {
 }
 
 function setLoading(isLoading) {
-  const btn = document.querySelector("button");
+  const btn = document.getElementById("submit-btn");
   if (!btn) return;
   btn.disabled = isLoading;
   btn.textContent = isLoading ? "Генерируем..." : "Сгенерировать";
