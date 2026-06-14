@@ -1,67 +1,67 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Generator</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Generator Pro</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <button id="history-toggle" class="history-trigger" onclick="toggleHistory()" title="История запросов">
-    <div class="bar"></div>
-    <div class="bar"></div>
-    <div class="bar"></div>
-  </button>
+    <div class="app-container">
+        <div class="app-header">
+            <h1 class="app-title">AI Generator</h1>
+            <div class="app-subtitle">Интеллектуальная генерация контента</div>
+        </div>
 
-  <div id="history-panel" class="history-panel">
-    <div class="history-header">
-      <h2>История запросов</h2>
-      <button class="close-btn" onclick="toggleHistory()">Закрыть</button>
+        <form id="generatorForm" onsubmit="event.preventDefault(); generate();">
+            <div class="field-group">
+                <label for="niche">Ниша <span>(минимум 3 варианта)</span></label>
+                <input id="niche" list="niche-list" placeholder="Выберите или введите нишу" required>
+                <datalist id="niche-list">
+                    <option value="Маркетинг">
+                    <option value="IT-технологии">
+                    <option value="Образование и онлайн-курсы">
+                    <option value="Продажи и ритейл">
+                </datalist>
+            </div>
+
+            <div class="field-group">
+                <label for="audience">Аудитория</label>
+                <input type="text" id="audience" placeholder="например: предприниматели, эксперты" required>
+            </div>
+
+            <div class="field-group">
+                <label for="goal">Цель</label>
+                <input type="text" id="goal" placeholder="например: прогрев, лидогенерация, продажа" required>
+            </div>
+
+            <div class="field-group">
+                <label for="style">Стиль</label>
+                <select id="style">
+                    <option value="formal">Официальный</option>
+                    <option value="friendly">Дружелюбный</option>
+                    <option value="sales">Продающий</option>
+                    <option value="creative">Креативный</option>
+                    <option value="minimal">Минимализм</option>
+                </select>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">Сгенерировать</button>
+        </form>
+
+        <div class="result-container" id="resultContainer">
+            <div class="result-header">
+                <div class="result-title" id="resultTitle">Результат генерации</div>
+                <button class="copy-btn" id="copyBtn" type="button" onclick="copyResult()">
+                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span id="copyBtnText">Скопировать</span>
+                </button>
+            </div>
+            <pre class="result-box" id="output"></pre>
+        </div>
     </div>
-    <div id="history-content" class="history-content">
-      <p class="empty-msg">Загрузка истории...</p>
-    </div>
-  </div>
 
-  <div class="container">
-    <h1>AI Generator</h1>
-
-    <label for="niche">Ниша (минимум 3 варианта)</label>
-    <input id="niche" list="niche-list" placeholder="Выберите нишу" />
-    <datalist id="niche-list">
-      <option value="Маркетинг">
-      <option value="IT">
-      <option value="Образование">
-    </datalist>
-
-    <label for="audience">Аудитория</label>
-    <input id="audience" placeholder="например: новички 18-25" />
-
-    <label for="goal">Цель</label>
-    <input id="goal" placeholder="например: увеличить продажи на 20%" />
-
-    <label>Стиль</label>
-    <div class="custom-select-wrapper" id="custom-select-wrapper">
-      <div class="custom-select-trigger" onclick="toggleSelect(event)">
-        <span id="selected-style-label">Официальный</span>
-        <input type="hidden" id="style" value="formal" />
-        <div class="arrow"></div>
-      </div>
-      <div class="custom-options">
-        <div class="custom-option selected" data-value="formal" onclick="selectOption(this)">Официальный</div>
-        <div class="custom-option" data-value="friendly" onclick="selectOption(this)">Дружелюбный</div>
-        <div class="custom-option" data-value="sales" onclick="selectOption(this)">Продающий</div>
-        <div class="custom-option" data-value="creative" onclick="selectOption(this)">Креативный</div>
-        <div class="custom-option" data-value="minimal" onclick="selectOption(this)">Минимализм</div>
-      </div>
-    </div>
-
-    <button id="submit-btn" onclick="generate()">Сгенерировать</button>
-
-    <pre id="output"></pre>
-  </div>
-
-  <script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
