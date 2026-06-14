@@ -2,13 +2,23 @@ import os
 from fastapi import FastAPI
 from pydantic import BaseModel
 import google.generativeai as genai
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# API KEY из Render ENV
+# ✅ CORS FIX (обязательно для frontend)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# API KEY из Render
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# МОДЕЛЬ (ВАЖНО — твоя актуальная)
+# ✅ актуальная модель (из твоего списка)
 MODEL_NAME = "models/gemini-3.5-flash"
 
 
@@ -28,7 +38,6 @@ def generate(data: RequestData):
 
         response = model.generate_content(data.prompt)
 
-        # безопасное извлечение текста (фикс твоей ошибки 'choices')
         return {
             "result": response.text if hasattr(response, "text") else str(response)
         }
