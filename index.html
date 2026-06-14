@@ -14,10 +14,35 @@
       <h1>AI Assistant</h1>
     </header>
 
-    <main class="chat-container" id="chat">
-      <!-- сообщения -->
-    </main>
+    <!-- НАСТРОЙКИ -->
+    <section class="form">
 
+      <select id="niche">
+        <option value="">Ниша (выбери)</option>
+        <option>Маркетинг</option>
+        <option>Образование</option>
+        <option>Бизнес</option>
+      </select>
+
+      <input id="audience" placeholder="Аудитория (например: подростки 16-20)" />
+
+      <input id="goal" placeholder="Цель (например: увеличить продажи на 20%)" />
+
+      <select id="style">
+        <option value="">Стиль</option>
+        <option>Официальный</option>
+        <option>Простой</option>
+        <option>Креативный</option>
+        <option>Технический</option>
+        <option>Разговорный</option>
+      </select>
+
+    </section>
+
+    <!-- ЧАТ -->
+    <main class="chat-container" id="chat"></main>
+
+    <!-- ВВОД -->
     <section class="input-area">
       <input id="userInput" type="text" placeholder="Введите запрос..." />
       <button onclick="sendMessage()">Отправить</button>
