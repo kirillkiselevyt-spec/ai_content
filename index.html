@@ -2,28 +2,30 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>AI Content Generator</title>
+    <title>AI Content SaaS</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
+
     <h1>AI Content Generator</h1>
 
-    <input id="niche" placeholder="Ниша (например: фитнес)">
-    <input id="audience" placeholder="Аудитория (например: мужчины 25-35)">
-    <input id="goal" placeholder="Цель (например: продажи)">
-    
+    <input id="niche" placeholder="Ниша">
+    <input id="audience" placeholder="Аудитория">
+    <input id="goal" placeholder="Цель">
+
     <select id="style">
-        <option value="официальный">Официальный</option>
-        <option value="юмористический">Юмористический</option>
-        <option value="продающий">Продающий</option>
-        <option value="экспертный">Экспертный</option>
+        <option value="official">Официальный</option>
+        <option value="viral">Вирусный</option>
+        <option value="sales">Продающий</option>
+        <option value="humor">Юмор</option>
     </select>
 
     <button onclick="generate()">Сгенерировать</button>
 
     <pre id="result"></pre>
+
 </div>
 
 <script src="app.js"></script>
