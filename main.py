@@ -6,19 +6,19 @@ import os
 
 app = FastAPI()
 
-# CORS (GitHub Pages → Render)
+# ✅ ЖЁСТКИЙ CORS (фикс Failed to fetch)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=False,
 )
 
-# Gemini API key
+# Gemini API
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Простая память в RAM (для старта, без БД)
+# простая память
 USER_MEMORY = {}
 
 class RequestData(BaseModel):
@@ -34,37 +34,40 @@ def root():
     return {"status": "ok"}
 
 
+# ✅ ОБЯЗАТЕЛЬНЫЙ PREFLIGHT FIX
+@app.options("/generate")
+def options_generate():
+    return {"ok": True}
+
+
 @app.post("/generate")
 def generate(data: RequestData):
 
-    # получаем историю пользователя
     history = USER_MEMORY.get(data.user_id, [])
-
-    # формируем контекст
-    history_text = "\n".join(history[-5:])  # последние 5 запросов
+    history_text = "\n".join(history[-5:])
 
     prompt = f"""
-Ты — эксперт по маркетингу и вирусному контенту.
+Ты — эксперт по вирусному контенту.
 
-Параметры пользователя:
-- Ниша: {data.niche}
-- Аудитория: {data.audience}
-- Цель: {data.goal}
-- Стиль: {data.style}
+Ниша: {data.niche}
+Аудитория: {data.audience}
+Цель: {data.goal}
+Стиль: {data.style}
 
 История пользователя:
 {history_text}
 
-Сгенерируй 5 новых, уникальных и вирусных идей контента.
-Сделай их конкретными и применимыми.
+Сгенерируй 5 идей контента.
 """
 
-    model = genai.GenerativeModel("gemini-pro")
-    response = model.generate_content(prompt)
+    try:
+        model = genai.GenerativeModel("gemini-pro")
+        response = model.generate_content(prompt)
+        result = response.text
+    except Exception as e:
+        result = f"AI ERROR: {str(e)}"
 
-    result = response.text
-
-    # сохраняем память пользователя
+    # память пользователя
     if data.user_id not in USER_MEMORY:
         USER_MEMORY[data.user_id] = []
 
