@@ -2,49 +2,48 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>AI Bot</title>
+  <title>AI Generator</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <h1>AI генератор</h1>
+  <h1>AI Generator</h1>
 
-    <!-- НИША -->
-    <label>Ниша</label>
-    <input id="niche" list="niche-list" placeholder="например: маркетинг" />
+  <!-- НИША -->
+  <label>Ниша (минимум 3 варианта)</label>
+  <input id="niche" list="niche-list" placeholder="Выберите нишу" />
+  <datalist id="niche-list">
+    <option value="Маркетинг">
+    <option value="IT">
+    <option value="Образование">
+  </datalist>
 
-    <datalist id="niche-list">
-      <option value="Маркетинг">
-      <option value="IT / Технологии">
-      <option value="Образование">
-    </datalist>
+  <!-- АУДИТОРИЯ -->
+  <label>Аудитория</label>
+  <input id="audience" placeholder="например: новички 18-25" />
 
-    <!-- АУДИТОРИЯ -->
-    <label>Аудитория</label>
-    <input id="audience" placeholder="например: новички 18-25" />
+  <!-- ЦЕЛЬ -->
+  <label>Цель</label>
+  <input id="goal" placeholder="например: увеличить продажи на 20%" />
 
-    <!-- ЦЕЛЬ -->
-    <label>Цель</label>
-    <input id="goal" placeholder="например: увеличить продажи на 20%" />
+  <!-- СТИЛЬ -->
+  <label>Стиль</label>
+  <select id="style">
+    <option value="formal">Официальный</option>
+    <option value="friendly">Дружелюбный</option>
+    <option value="sales">Продающий</option>
+    <option value="creative">Креативный</option>
+    <option value="minimal">Минимализм</option>
+  </select>
 
-    <!-- СТИЛЬ -->
-    <label>Стиль</label>
-    <select id="style">
-      <option value="formal">Официальный</option>
-      <option value="friendly">Дружелюбный</option>
-      <option value="sales">Продающий</option>
-      <option value="creative">Креативный</option>
-      <option value="minimal">Минимализм</option>
-    </select>
+  <button onclick="generate()">Сгенерировать</button>
 
-    <button onclick="generate()">Сгенерировать</button>
+  <pre id="output"></pre>
 
-    <pre id="output"></pre>
+</div>
 
-  </div>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
