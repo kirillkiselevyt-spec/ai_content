@@ -1,8 +1,9 @@
 const API_URL = "https://ai-bot-backend-x5nr.onrender.com/generate";
 
-// уникальный пользователь
 const USER_ID = localStorage.getItem("user_id") || crypto.randomUUID();
 localStorage.setItem("user_id", USER_ID);
+
+console.log("API:", API_URL);
 
 async function generate() {
 
@@ -35,12 +36,15 @@ async function generate() {
             })
         });
 
-        const data = await res.json();
+        const text = await res.text();
+        console.log("RAW RESPONSE:", text);
 
-        resultBlock.innerText = data.result;
+        const data = JSON.parse(text);
+
+        resultBlock.innerText = data.result || "Пустой ответ";
 
     } catch (err) {
-        console.error(err);
-        resultBlock.innerText = "Ошибка сервера";
+        console.error("FETCH ERROR:", err);
+        resultBlock.innerText = "Ошибка соединения с сервером";
     }
 }
