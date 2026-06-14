@@ -6,7 +6,6 @@ import os
 
 app = FastAPI()
 
-# CORS (фикс Failed to fetch)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,8 +14,8 @@ app.add_middleware(
     allow_credentials=False,
 )
 
-# 🔐 ключ берётся только из Render ENV
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+
 
 class RequestData(BaseModel):
     user_id: str
@@ -35,15 +34,14 @@ def root():
 def generate(data: RequestData):
 
     prompt = f"""
-Ты — эксперт по вирусному и продающему контенту.
+Ты эксперт по вирусному контенту.
 
 Ниша: {data.niche}
 Аудитория: {data.audience}
 Цель: {data.goal}
 Стиль: {data.style}
 
-Сгенерируй 5 сильных идей контента, которые можно использовать в соцсетях.
-Сделай их конкретными, не общими.
+Сгенерируй 5 идей контента.
 """
 
     try:
@@ -58,7 +56,7 @@ def generate(data: RequestData):
                 "messages": [
                     {
                         "role": "system",
-                        "content": "Ты маркетинговый AI ассистент, который генерирует вирусные идеи контента."
+                        "content": "Ты маркетинговый AI ассистент"
                     },
                     {
                         "role": "user",
@@ -70,8 +68,7 @@ def generate(data: RequestData):
             timeout=30
         )
 
-        data_json = response.json()
-        result = data_json["choices"][0]["message"]["content"]
+        result = response.json()["choices"][0]["message"]["content"]
 
     except Exception as e:
         result = f"AI ERROR: {str(e)}"
