@@ -2,67 +2,44 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Generator</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <button id="history-toggle" class="history-trigger" onclick="toggleHistory()" title="История запросов">
-    <div class="bar"></div>
-    <div class="bar"></div>
-    <div class="bar"></div>
-  </button>
+<div class="container">
 
-  <div id="history-panel" class="history-panel">
-    <div class="history-header">
-      <h2>История запросов</h2>
-      <button class="close-btn" onclick="toggleHistory()">Закрыть</button>
-    </div>
-    <div id="history-content" class="history-content">
-      <p class="empty-msg">Загрузка истории...</p>
-    </div>
-  </div>
+  <h1>AI Generator</h1>
 
-  <div class="container">
-    <h1>AI Generator</h1>
-    <p class="subtitle">Интеллектуальная генерация контента</p>
+  <label for="niche">Ниша (минимум 3 варианта)</label>
+  <input id="niche" list="niche-list" placeholder="Выберите нишу" />
+  <datalist id="niche-list">
+    <option value="Маркетинг">
+    <option value="IT">
+    <option value="Образование">
+  </datalist>
 
-    <label for="niche">Ниша (минимум 3 варианта)</label>
-    <input id="niche" list="niche-list" placeholder="Выберите нишу" />
-    <datalist id="niche-list">
-      <option value="Маркетинг">
-      <option value="IT">
-      <option value="Образование">
-    </datalist>
+  <label for="audience">Аудитория</label>
+  <input id="audience" placeholder="например: новички 18-25" />
 
-    <label for="audience">Аудитория</label>
-    <input id="audience" placeholder="например: новички 18-25" />
+  <label for="goal">Цель</label>
+  <input id="goal" placeholder="например: увеличить продажи на 20%" />
 
-    <label for="goal">Цель</label>
-    <input id="goal" placeholder="например: увеличить продажи на 20%" />
+  <label for="style">Стиль</label>
+  <select id="style">
+    <option value="formal">Официальный</option>
+    <option value="friendly">Дружелюбный</option>
+    <option value="sales">Продающий</option>
+    <option value="creative">Креативный</option>
+    <option value="minimal">Минимализм</option>
+  </select>
 
-    <label>Стиль</label>
-    <div class="custom-select-wrapper">
-      <div class="custom-select-trigger" onclick="toggleSelect(event)">
-        <span id="selected-style-label">Официальный</span>
-        <input type="hidden" id="style" value="formal" />
-        <div class="arrow"></div>
-      </div>
-      <div class="custom-options" id="custom-options">
-        <div class="custom-option selected" data-value="formal" onclick="selectOption(this)">Официальный</div>
-        <div class="custom-option" data-value="friendly" onclick="selectOption(this)">Дружелюбный</div>
-        <div class="custom-option" data-value="sales" onclick="selectOption(this)">Продающий</div>
-        <div class="custom-option" data-value="creative" onclick="selectOption(this)">Креативный</div>
-        <div class="custom-option" data-value="minimal" onclick="selectOption(this)">Минимализм</div>
-      </div>
-    </div>
+  <button onclick="generate()">Сгенерировать</button>
 
-    <button id="submit-btn" onclick="generate()">Сгенерировать</button>
+  <pre id="output"></pre>
 
-    <pre id="output"></pre>
-  </div>
+</div>
 
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
