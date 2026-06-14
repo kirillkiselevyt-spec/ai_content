@@ -1,35 +1,33 @@
 body {
-    background: #0f0f0f;
-    color: #ffffff;
-    font-family: Arial, sans-serif;
+  font-family: Arial;
+  background: #111;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  padding: 40px;
 }
 
 .container {
-    max-width: 600px;
-    margin: 50px auto;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-input {
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
+input, select, button {
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
 }
 
 button {
-    padding: 12px;
-    background: #6c5ce7;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 8px;
+  background: #4CAF50;
+  color: white;
+  cursor: pointer;
 }
 
 pre {
-    background: #1e1e1e;
-    padding: 15px;
-    border-radius: 10px;
-    min-height: 150px;
+  background: #222;
+  padding: 10px;
+  min-height: 100px;
 }
