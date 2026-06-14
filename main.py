@@ -6,7 +6,6 @@ import os
 
 app = FastAPI()
 
-# CORS (обязательно для GitHub Pages / браузера)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,7 +13,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# API key берём только из Render Environment Variables
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
 
@@ -31,24 +29,30 @@ def root():
     return {"status": "ok"}
 
 
+@app.get("/debug-key")
+def debug_key():
+    return {
+        "key_exists": bool(DEEPSEEK_API_KEY),
+        "key_preview": DEEPSEEK_API_KEY[:6] if DEEPSEEK_API_KEY else None
+    }
+
+
 @app.post("/generate")
 def generate(data: RequestData):
 
     prompt = f"""
-Ты — эксперт по созданию вирусного и продающего контента.
+Ты эксперт по вирусному и продающему контенту.
 
 Ниша: {data.niche}
 Аудитория: {data.audience}
 Цель: {data.goal}
 Стиль: {data.style}
 
-Сгенерируй 5 уникальных идей контента.
-Каждая идея должна быть конкретной, применимой и не общей.
+Сгенерируй 5 идей контента.
 """
 
-    # ❗ защита: если ключ не задан
     if not DEEPSEEK_API_KEY:
-        return {"result": "ERROR: DEEPSEEK_API_KEY is not set in environment variables"}
+        return {"result": "ERROR: DEEPSEEK_API_KEY is not set"}
 
     try:
         response = requests.post(
@@ -62,7 +66,7 @@ def generate(data: RequestData):
                 "messages": [
                     {
                         "role": "system",
-                        "content": "Ты маркетинговый AI, который генерирует вирусные идеи контента"
+                        "content": "Ты маркетинговый AI ассистент"
                     },
                     {
                         "role": "user",
@@ -74,26 +78,28 @@ def generate(data: RequestData):
             timeout=30
         )
 
-        # ❗ если API вернул ошибку
         if response.status_code != 200:
+            # 🔥 ВОТ ТО, ЧТО ТЫ ПРОСИЛ ДОБАВИТЬ
             return {
                 "result": "API ERROR",
                 "status_code": response.status_code,
                 "details": response.text
             }
 
-        data = response.json()
+        data_json = response.json()
 
-        # ❗ защита от неожиданных ответов
-        if "choices" not in data:
+        if "choices" not in data_json:
             return {
                 "result": "INVALID RESPONSE FROM DEEPSEEK",
-                "raw_response": data
+                "raw_response": data_json
             }
 
-        result = data["choices"][0]["message"]["content"]
+        result = data_json["choices"][0]["message"]["content"]
 
         return {"result": result}
 
     except Exception as e:
-        return {"result": f"AI ERROR: {str(e)}"}
+        return {
+            "result": "AI ERROR",
+            "error": str(e)
+        }
