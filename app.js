@@ -3,8 +3,6 @@ const API_URL = "https://ai-bot-backend-x5nr.onrender.com/generate";
 const USER_ID = localStorage.getItem("user_id") || crypto.randomUUID();
 localStorage.setItem("user_id", USER_ID);
 
-console.log("API:", API_URL);
-
 async function generate() {
 
     const niche = document.getElementById("niche").value;
@@ -13,11 +11,6 @@ async function generate() {
     const style = document.getElementById("style").value;
 
     const resultBlock = document.getElementById("result");
-
-    if (!niche || !audience || !goal || !style) {
-        resultBlock.innerText = "Заполни все поля";
-        return;
-    }
 
     resultBlock.innerText = "Генерация...";
 
@@ -36,15 +29,11 @@ async function generate() {
             })
         });
 
-        const text = await res.text();
-        console.log("RAW RESPONSE:", text);
-
-        const data = JSON.parse(text);
-
-        resultBlock.innerText = data.result || "Пустой ответ";
+        const data = await res.json();
+        resultBlock.innerText = data.result;
 
     } catch (err) {
-        console.error("FETCH ERROR:", err);
+        console.error(err);
         resultBlock.innerText = "Ошибка соединения с сервером";
     }
 }
