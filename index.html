@@ -2,10 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Generator Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Content Generator</title>
     <style>
-        /* CSS Reset & Premium Apple Design Variables */
+        /* CSS Reset & Apple Design Language */
         *, *::before, *::after {
             box-sizing: border-box;
             margin: 0;
@@ -30,25 +30,27 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            padding: 24px 16px;
-            display: block;
+            padding: 40px 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
         }
 
-        /* App Container with Glassmorphism */
+        /* Главный контейнер с эффектом матового стекла и плавной анимацией */
         .app-container {
+            width: 100%;
             max-width: 540px;
-            margin: 0 auto;
             background: var(--container-bg);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 24px;
-            padding: 32px 24px;
+            padding: 36px 28px;
             box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(30px);
             -webkit-backdrop-filter: blur(30px);
             opacity: 0;
-            transform: translateY(15px);
+            transform: translateY(20px);
             animation: fadeInContainer 0.6s var(--apple-easing) forwards;
         }
 
@@ -59,7 +61,7 @@
             }
         }
 
-        /* Typography */
+        /* Заголовки */
         .app-header {
             text-align: center;
             margin-bottom: 32px;
@@ -81,7 +83,7 @@
             font-weight: 400;
         }
 
-        /* Smooth Form Elements */
+        /* Поля формы и их каскадное появление */
         .field-group {
             margin-bottom: 20px;
             opacity: 0;
@@ -127,7 +129,7 @@
             color: #ffffff;
             font-family: inherit;
             outline: none;
-            transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s var(--apple-easing);
+            transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
 
         input[type="text"]:focus, select:focus {
@@ -150,7 +152,7 @@
             cursor: pointer;
         }
 
-        /* Premium Button */
+        /* Стильная Apple Кнопка */
         .submit-btn {
             width: 100%;
             background: linear-gradient(180deg, #0077ed 0%, #006edb 100%);
@@ -177,12 +179,12 @@
             opacity: 0.95;
         }
 
-        /* Result Area (Строго сгруппирован, не выходит за рамки) */
+        /* Сгруппированная зона результата (не выходит за рамки) */
         .result-container {
             margin-top: 32px;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
             padding-top: 28px;
-            display: none; /* Переключится на block при выводе результата */
+            display: none; /* Переключится на block из твоего обработчика при выводе */
             animation: fadeInContainer 0.5s var(--apple-easing) forwards;
         }
 
@@ -211,6 +213,7 @@
             box-shadow: 0 0 8px #30d158;
         }
 
+        /* Кнопка Копирования */
         .copy-btn {
             background-color: rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -241,7 +244,7 @@
             stroke-linejoin: round;
         }
 
-        /* Ограничительный контейнер: текст никогда не вывалится */
+        /* Ограниченный бокс вывода с внутренним премиум-скроллом */
         .result-box {
             background-color: rgba(0, 0, 0, 0.25);
             border: 1px solid rgba(255, 255, 255, 0.06);
@@ -254,6 +257,7 @@
             word-break: break-word;
         }
 
+        /* Оформление внутренней структуры текста */
         .result-block {
             margin-bottom: 16px;
         }
@@ -293,8 +297,44 @@
     <div class="app-container">
         <div class="app-header">
             <h1 class="app-title">AI Generator</h1>
-            <div class="app-subtitle">Премиальный генератор контента</div>
+            <div class="app-subtitle">Интеллектуальная генерация контента</div>
         </div>
 
         <form id="generatorForm">
             <div class="field-group">
+                <label for="niche">Ниша <span>(минимум 3 варианта)</span></label>
+                <input type="text" id="niche" placeholder="Выберите вашу нишу" required>
+            </div>
+
+            <div class="field-group">
+                <label for="audience">Аудитория</label>
+                <input type="text" id="audience" placeholder="например: новички 18-25" required>
+            </div>
+
+            <div class="field-group">
+                <label for="target">Цель</label>
+                <input type="text" id="target" placeholder="например: увеличить продажи на 20%" required>
+            </div>
+
+            <div class="field-group">
+                <label for="style">Стиль</label>
+                <select id="style">
+                    <option value="official">Официальный</option>
+                    <option value="friendly">Дружелюбный</option>
+                    <option value="creative">Креативный</option>
+                    <option value="minimal">Минималистичный</option>
+                </select>
+            </div>
+
+            <button type="submit" class="submit-btn">Сгенерировать</button>
+        </form>
+
+        <div class="result-container" id="resultContainer">
+            <div class="result-header">
+                <div class="result-title">Результат генерации</div>
+                <button class="copy-btn" id="copyBtn" type="button">
+                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span id="copyBtnText">Скопировать</span>
+                </button>
+            </div>
+            <div class="result-box" id="resultBox">
