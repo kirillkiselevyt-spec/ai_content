@@ -1,10 +1,11 @@
 const API_URL = "https://ai-bot-backend-x5nr.onrender.com/generate";
 
-// создаём или берём уникального пользователя
+// уникальный пользователь
 const USER_ID = localStorage.getItem("user_id") || crypto.randomUUID();
 localStorage.setItem("user_id", USER_ID);
 
 async function generate() {
+
     const niche = document.getElementById("niche").value;
     const audience = document.getElementById("audience").value;
     const goal = document.getElementById("goal").value;
@@ -12,39 +13,34 @@ async function generate() {
 
     const resultBlock = document.getElementById("result");
 
-    // базовая валидация
     if (!niche || !audience || !goal || !style) {
         resultBlock.innerText = "Заполни все поля";
         return;
     }
 
-    resultBlock.innerText = "Генерация идей...";
+    resultBlock.innerText = "Генерация...";
 
     try {
-        const response = await fetch(API_URL, {
+        const res = await fetch(API_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
                 user_id: USER_ID,
-                niche: niche,
-                audience: audience,
-                goal: goal,
-                style: style
+                niche,
+                audience,
+                goal,
+                style
             })
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error: ${response.status}`);
-        }
+        const data = await res.json();
 
-        const data = await response.json();
+        resultBlock.innerText = data.result;
 
-        resultBlock.innerText = data.result || "Нет ответа от сервера";
-
-    } catch (error) {
-        console.error(error);
-        resultBlock.innerText = "Ошибка подключения к серверу";
+    } catch (err) {
+        console.error(err);
+        resultBlock.innerText = "Ошибка сервера";
     }
 }
