@@ -1,24 +1,27 @@
-const API_URL = "https://your-backend-url.com/generate";
+const API_URL = "https://ai-bot-backend-x5nr.onrender.com";
 
 async function generate() {
-  const data = {
-    niche: document.getElementById("niche").value,
-    goal: document.getElementById("goal").value,
-    tone: document.getElementById("tone").value,
-    audience: document.getElementById("audience").value
-  };
+    const niche = document.getElementById("niche").value;
+    const audience = document.getElementById("audience").value;
+    const goal = document.getElementById("goal").value;
+    const style = document.getElementById("style").value;
 
-  document.getElementById("result").innerText = "Генерация...";
+    const resultBlock = document.getElementById("result");
+    resultBlock.innerText = "Генерация...";
 
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(data)
-  });
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ niche, audience, goal, style })
+        });
 
-  const json = await res.json();
+        const data = await response.json();
+        resultBlock.innerText = data.result;
 
-  document.getElementById("result").innerText = json.result;
+    } catch (error) {
+        resultBlock.innerText = "Ошибка: " + error;
+    }
 }
