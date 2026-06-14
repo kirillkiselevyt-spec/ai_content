@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-import google.generativeai as genai
+import requests
 import os
 
 app = FastAPI()
 
-# ✅ ЖЁСТКИЙ CORS (фикс Failed to fetch)
+# CORS (фикс Failed to fetch)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,11 +15,8 @@ app.add_middleware(
     allow_credentials=False,
 )
 
-# Gemini API
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-# простая память
-USER_MEMORY = {}
+# 🔐 ключ берётся только из Render ENV
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
 class RequestData(BaseModel):
     user_id: str
@@ -34,43 +31,49 @@ def root():
     return {"status": "ok"}
 
 
-# ✅ ОБЯЗАТЕЛЬНЫЙ PREFLIGHT FIX
-@app.options("/generate")
-def options_generate():
-    return {"ok": True}
-
-
 @app.post("/generate")
 def generate(data: RequestData):
 
-    history = USER_MEMORY.get(data.user_id, [])
-    history_text = "\n".join(history[-5:])
-
     prompt = f"""
-Ты — эксперт по вирусному контенту.
+Ты — эксперт по вирусному и продающему контенту.
 
 Ниша: {data.niche}
 Аудитория: {data.audience}
 Цель: {data.goal}
 Стиль: {data.style}
 
-История пользователя:
-{history_text}
-
-Сгенерируй 5 идей контента.
+Сгенерируй 5 сильных идей контента, которые можно использовать в соцсетях.
+Сделай их конкретными, не общими.
 """
 
-   try:
-    model = genai.GenerativeModel("gemini-1.5-flash")
-    response = model.generate_content(prompt)
-    result = response.text
-except Exception as e:
-    result = f"AI ERROR: {str(e)}"
-    
-    # память пользователя
-    if data.user_id not in USER_MEMORY:
-        USER_MEMORY[data.user_id] = []
+    try:
+        response = requests.post(
+            "https://api.deepseek.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "deepseek-chat",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Ты маркетинговый AI ассистент, который генерирует вирусные идеи контента."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "temperature": 0.8
+            },
+            timeout=30
+        )
 
-    USER_MEMORY[data.user_id].append(result)
+        data_json = response.json()
+        result = data_json["choices"][0]["message"]["content"]
+
+    except Exception as e:
+        result = f"AI ERROR: {str(e)}"
 
     return {"result": result}
