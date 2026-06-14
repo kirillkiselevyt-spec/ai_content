@@ -5,16 +5,13 @@ import google.generativeai as genai
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-# Импортируем модули базы данных
 from database import SessionLocal, engine, Base
 from models import User
 
-# Автоматически создаем таблицы в базе данных при старте приложения
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# Разрешаем CORS, чтобы фронтенд мог беспрепятственно общаться с бэкендом
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,7 +20,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Функция (Dependency) для безопасного управления сессиями БД
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+MODEL_NAME = "models/gemini-3.5-flash"
+
 def get_db():
     db = SessionLocal()
     try:
@@ -31,15 +30,6 @@ def get_db():
     finally:
         db.close()
 
-# Инициализация API-ключа Gemini
-api_key = os.getenv("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
-
-# Самая актуальная и быстрая модель
-MODEL_NAME = "gemini-2.5-flash"
-
-# Спецификация входных данных (DTO)
 class RequestData(BaseModel):
     user_id: str
     prompt: str
@@ -50,61 +40,48 @@ class RequestData(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status": "ok", "database": "connected", "model": MODEL_NAME}
+    return {"status": "ok"}
+
+
+# ── НОВЫЙ ЭНДПОИНТ: Получение истории для фронтенд-панели ──
+@app.get("/history/{user_id}")
+def get_user_history(user_id: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        return {"user_id": user_id, "history": ""}
+    return {"user_id": user_id, "history": user.history}
 
 
 @app.post("/generate")
 def generate(data: RequestData, db: Session = Depends(get_db)):
-    if not os.getenv("GEMINI_API_KEY"):
-        raise HTTPException(
-            status_code=500, 
-            detail="Ошибка конфигурации: на сервере Render не задан GEMINI_API_KEY."
-        )
-
     try:
-        # 1. Работа со слоем данных и историей пользователя
         user = db.query(User).filter(User.user_id == data.user_id).first()
         
         if not user:
-            # Создаем нового пользователя, если он зашел впервые
             user = User(
                 user_id=data.user_id,
                 niche=data.niche,
                 audience=data.audience,
                 style=data.style,
-                history=f"[История создана]\nЗапрос: {data.prompt}\n"
+                history=f"Запрос: {data.prompt}\n"
             )
             db.add(user)
         else:
-            # Обновляем метаданные существующего пользователя и дополняем лог истории
             user.niche = data.niche
             user.audience = data.audience
             user.style = data.style
-            user.history = (user.history or "") + f"\n--- Следующий запрос ---\nЗапрос: {data.prompt}\n"
-        
-        # 2. Инференс в нейросеть Gemini
+            user.history = (user.history or "") + f"\n--- Новый запрос ---\nЗапрос: {data.prompt}\n"
+
         model = genai.GenerativeModel(MODEL_NAME)
         response = model.generate_content(data.prompt)
 
-        if hasattr(response, "text") and response.text:
-            generated_text = response.text
-            
-            # Дописываем успешный ответ ИИ в историю пользователя
-            user.history += f"Ответ ИИ:\n{generated_text}\n"
-            
-            # Фиксируем транзакцию в SQLite
-            db.commit()
-            
-            return {"result": generated_text}
-        else:
-            raise HTTPException(
-                status_code=502, 
-                detail="Модель Gemini вернула пустой ответ или контент заблокирован фильтрами."
-            )
+        result_text = response.text if hasattr(response, "text") else str(response)
+        
+        user.history += f"Ответ:\n{result_text}\n"
+        db.commit()
+
+        return {"result": result_text}
 
     except Exception as e:
-        db.rollback()  # Откатываем изменения в БД при любом сбое
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Внутренняя ошибка сервера: {str(e)}"
-        )
+        db.rollback()
+        return {"error": "Gemini API error", "details": str(e)}
