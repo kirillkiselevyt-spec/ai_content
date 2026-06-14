@@ -6,14 +6,15 @@ import os
 
 app = FastAPI()
 
+# CORS (обязательно для GitHub Pages / браузера)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=False,
 )
 
+# API key берём только из Render Environment Variables
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
 
@@ -34,15 +35,20 @@ def root():
 def generate(data: RequestData):
 
     prompt = f"""
-Ты эксперт по вирусному контенту.
+Ты — эксперт по созданию вирусного и продающего контента.
 
 Ниша: {data.niche}
 Аудитория: {data.audience}
 Цель: {data.goal}
 Стиль: {data.style}
 
-Сгенерируй 5 идей контента.
+Сгенерируй 5 уникальных идей контента.
+Каждая идея должна быть конкретной, применимой и не общей.
 """
+
+    # ❗ защита: если ключ не задан
+    if not DEEPSEEK_API_KEY:
+        return {"result": "ERROR: DEEPSEEK_API_KEY is not set in environment variables"}
 
     try:
         response = requests.post(
@@ -56,7 +62,7 @@ def generate(data: RequestData):
                 "messages": [
                     {
                         "role": "system",
-                        "content": "Ты маркетинговый AI ассистент"
+                        "content": "Ты маркетинговый AI, который генерирует вирусные идеи контента"
                     },
                     {
                         "role": "user",
@@ -68,9 +74,26 @@ def generate(data: RequestData):
             timeout=30
         )
 
-        result = response.json()["choices"][0]["message"]["content"]
+        # ❗ если API вернул ошибку
+        if response.status_code != 200:
+            return {
+                "result": "API ERROR",
+                "status_code": response.status_code,
+                "details": response.text
+            }
+
+        data = response.json()
+
+        # ❗ защита от неожиданных ответов
+        if "choices" not in data:
+            return {
+                "result": "INVALID RESPONSE FROM DEEPSEEK",
+                "raw_response": data
+            }
+
+        result = data["choices"][0]["message"]["content"]
+
+        return {"result": result}
 
     except Exception as e:
-        result = f"AI ERROR: {str(e)}"
-
-    return {"result": result}
+        return {"result": f"AI ERROR: {str(e)}"}
