@@ -1,5 +1,7 @@
-const API_URL = "https://ai-bot-backend-x5nr.onrender.com";
+// Константа URL бэкенда (без слэша на конце)
+const API_URL = "https://ai-bot-backend-x5nr.onrender.com/generate";
 
+// Генерация или извлечение UUID пользователя из памяти браузера
 function getOrCreateUserId() {
   let userId = localStorage.getItem("ai_generator_user_id");
   if (!userId) {
@@ -9,136 +11,126 @@ function getOrCreateUserId() {
   return userId;
 }
 
-// Исправлено открытие кастомного списка стилей
-function toggleSelect(event) {
-  event.stopPropagation();
-  document.getElementById("custom-select-wrapper").classList.toggle("open");
-}
-
-function selectOption(element) {
-  const value = element.getAttribute("data-value");
-  const label = element.textContent;
-  
-  document.getElementById("style").value = value;
-  document.getElementById("selected-style-label").textContent = label;
-  
-  document.querySelectorAll(".custom-option").forEach(opt => opt.classList.remove("selected"));
-  element.classList.add("selected");
-}
-
-document.addEventListener("click", () => {
-  const wrapper = document.getElementById("custom-select-wrapper");
-  if (wrapper) wrapper.classList.remove("open");
-});
-
-// Открытие панели истории запросов
-async function toggleHistory() {
-  const panel = document.getElementById("history-panel");
-  panel.classList.toggle("open");
-  if (panel.classList.contains("open")) {
-    await fetchHistory();
-  }
-}
-
-async function fetchHistory() {
-  const contentDiv = document.getElementById("history-content");
-  const userId = getOrCreateUserId();
-
-  try {
-    const response = await fetch(`${API_URL}/history/${userId}`);
-    if (!response.ok) throw new Error();
-
-    const data = await response.json();
-    contentDiv.innerHTML = "";
-
-    if (!data.history || data.history.trim() === "") {
-      contentDiv.innerHTML = '<p class="empty-msg">История запросов пуста.</p>';
-      return;
-    }
-
-    const blocks = data.history.split("--- Новый запрос ---");
-    blocks.forEach(block => {
-      if (!block.trim()) return;
-      const promptMatch = block.match(/Запрос:([\s\S]*?)(?=Ответ:|$)/);
-      const resultMatch = block.match(/Ответ:([\s\S]*?)$/);
-
-      if (promptMatch) {
-        const itemDiv = document.createElement("div");
-        itemDiv.className = "history-item";
-        const pTxt = promptMatch[1].trim().split('\n')[0];
-        const rTxt = resultMatch ? resultMatch[1].trim() : "...";
-        
-        itemDiv.innerHTML = `
-          <div class="history-item-prompt">${pTxt}</div>
-          <div class="history-item-result">${rTxt}</div>
-        `;
-        contentDiv.insertBefore(itemDiv, contentDiv.firstChild);
-      }
-    });
-  } catch (_) {
-    contentDiv.innerHTML = '<p class="empty-msg" style="color: #e74c3c;">Не удалось получить историю.</p>';
-  }
-}
-
-// Генерация контента
 async function generate() {
+  // Безопасно считываем элементы интерфейса
   const niche    = document.getElementById("niche").value.trim();
   const audience = document.getElementById("audience").value.trim();
   const goal     = document.getElementById("goal").value.trim();
   const style    = document.getElementById("style").value;
 
+  // Первичная валидация на стороне клиента
   if (!niche || !audience || !goal) {
-    showOutput("⚠️ Пожалуйста, заполните все поля перед генерацией.", true);
+    showOutput("⚠️ Пожалуйста, заполните все обязательные поля перед отправкой.", true);
     return;
   }
 
-  const promptText = `
+  // Сборка структурированного промпта
+  const prompt = `
+Напиши контент для следующего запроса:
+
 Ниша: ${niche}
 Целевая аудитория: ${audience}
 Цель: ${goal}
-Стиль: ${styleLabel(style)}
+Стиль написания: ${styleLabel(style)}
+
+Создай качественный, убедительный текст, полностью соответствующий указанным параметрам.
 `.trim();
 
   setLoading(true);
-  showOutput("⏳ Генерируем текст...", false);
+  showOutput("⏳ Искусственный интеллект генерирует ваш контент...", false);
+
+  // Формируем расширенный JSON-пакет данных, соответствующий Pydantic-модели бэкенда
+  const payload = {
+    user_id: getOrCreateUserId(),
+    prompt: prompt,
+    niche: niche,
+    audience: audience,
+    style: styleLabel(style)
+  };
 
   try {
-    const response = await fetch(`${API_URL}/generate`, {
+    const response = await fetch(API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: getOrCreateUserId(),
-        prompt: promptText
-      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json();
-    if (response.ok && data.result) {
+
+    if (!response.ok) {
+      showOutput(`❌ Ошибка сервера (${response.status}): ${data.detail || 'Неизвестный сбой'}`, true);
+      return;
+    }
+
+    if (data.result) {
       showOutput(data.result, false);
     } else {
-      showOutput(`❌ Ошибка: ${data.error || "Неизвестная ошибка"}`, true);
+      showOutput("❌ Сервер обработал запрос, но вернул пустой результат.", true);
     }
   } catch (err) {
-    showOutput("❌ Ошибка соединения с сервером.", true);
+    console.error("Fetch error:", err);
+    showOutput("❌ Сетевая ошибка. Не удалось связаться с сервером. Проверьте деплой на Render.", true);
   } finally {
     setLoading(false);
   }
 }
 
+// Преобразование системного значения стиля в красивую строку
 function styleLabel(value) {
-  const labels = { formal: "Официальный", friendly: "Дружелюбный", sales: "Продающий", creative: "Креативный", minimal: "Минимализм" };
+  const labels = {
+    formal:   "Официальный",
+    friendly: "Дружелюбный",
+    sales:    "Продающий",
+    creative: "Креативный",
+    minimal:  "Минимализм",
+  };
   return labels[value] || value;
 }
 
+// Вывод результатов и управление состояниями стилей контейнера
 function showOutput(text, isError) {
+  const container = document.getElementById("resultContainer");
+  const title = document.getElementById("resultTitle");
   const output = document.getElementById("output");
+  const copyBtn = document.getElementById("copyBtn");
+
+  container.style.display = "block";
   output.textContent = text;
-  output.style.color = isError ? "#e74c3c" : "inherit";
+  
+  if (isError) {
+    output.style.color = "#ff453a";
+    title.textContent = "Ошибка выполнения";
+    title.classList.add("error-state");
+    copyBtn.style.display = "none";
+  } else {
+    output.style.color = "inherit";
+    title.textContent = "Результат генерации";
+    title.classList.remove("error-state");
+    copyBtn.style.display = "flex";
+  }
 }
 
+// Управление состоянием кнопки отправки
 function setLoading(isLoading) {
-  const btn = document.getElementById("submit-btn");
+  const btn = document.getElementById("submitBtn");
   if (!btn) return;
   btn.disabled = isLoading;
   btn.textContent = isLoading ? "Генерируем..." : "Сгенерировать";
+}
+
+// Быстрое нативное копирование контента в буфер обмена
+function copyResult() {
+  const output = document.getElementById("output");
+  const copyBtnText = document.getElementById("copyBtnText");
+  
+  if (!output || output.textContent.startsWith("⏳") || output.textContent.startsWith("❌")) return;
+
+  navigator.clipboard.writeText(output.textContent).then(() => {
+    copyBtnText.innerText = 'Скопировано!';
+    setTimeout(() => {
+      copyBtnText.innerText = 'Скопировать';
+    }, 2000);
+  }).catch(err => console.error('Не удалось скопировать текст:', err));
 }
