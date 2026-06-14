@@ -30,6 +30,7 @@ def get_db():
     finally:
         db.close()
 
+# Модель входящих данных должна строго соответствовать структуре из app.js
 class RequestData(BaseModel):
     user_id: str
     prompt: str
@@ -43,9 +44,8 @@ def root():
     return {"status": "ok"}
 
 
-# ── НОВЫЙ ЭНДПОИНТ: Получение истории для фронтенд-панели ──
 @app.get("/history/{user_id}")
-def get_user_history(user_id: str, db: Session = Depends(get_db)):
+def get_history(user_id: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         return {"user_id": user_id, "history": ""}
@@ -84,4 +84,4 @@ def generate(data: RequestData, db: Session = Depends(get_db)):
 
     except Exception as e:
         db.rollback()
-        return {"error": "Gemini API error", "details": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
