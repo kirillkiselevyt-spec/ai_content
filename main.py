@@ -1,16 +1,25 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 import os
 
-from database import SessionLocal, engine
-from models import Base, User
-
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
 
+# CORS (GitHub Pages → Render)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Gemini API key
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Простая память в RAM (для старта, без БД)
+USER_MEMORY = {}
 
 class RequestData(BaseModel):
     user_id: str
@@ -19,49 +28,46 @@ class RequestData(BaseModel):
     goal: str
     style: str
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+
+@app.get("/")
+def root():
+    return {"status": "ok"}
+
 
 @app.post("/generate")
-def generate(data: RequestData, db=Depends(get_db)):
+def generate(data: RequestData):
 
-    user = db.query(User).filter(User.user_id == data.user_id).first()
+    # получаем историю пользователя
+    history = USER_MEMORY.get(data.user_id, [])
 
-    if not user:
-        user = User(
-            user_id=data.user_id,
-            niche=data.niche,
-            audience=data.audience,
-            style=data.style,
-            history=""
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+    # формируем контекст
+    history_text = "\n".join(history[-5:])  # последние 5 запросов
 
     prompt = f"""
-    Ты маркетолог и креатор контента.
+Ты — эксперт по маркетингу и вирусному контенту.
 
-    Пользователь:
-    - Ниша: {data.niche}
-    - Аудитория: {data.audience}
-    - Цель: {data.goal}
-    - Стиль: {data.style}
+Параметры пользователя:
+- Ниша: {data.niche}
+- Аудитория: {data.audience}
+- Цель: {data.goal}
+- Стиль: {data.style}
 
-    История пользователя:
-    {user.history}
+История пользователя:
+{history_text}
 
-    Сгенерируй 5 новых вирусных идей.
-    """
+Сгенерируй 5 новых, уникальных и вирусных идей контента.
+Сделай их конкретными и применимыми.
+"""
 
     model = genai.GenerativeModel("gemini-pro")
     response = model.generate_content(prompt)
 
-    user.history += "\n" + response.text
-    db.commit()
+    result = response.text
 
-    return {"result": response.text}
+    # сохраняем память пользователя
+    if data.user_id not in USER_MEMORY:
+        USER_MEMORY[data.user_id] = []
+
+    USER_MEMORY[data.user_id].append(result)
+
+    return {"result": result}
