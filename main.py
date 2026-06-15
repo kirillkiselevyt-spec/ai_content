@@ -35,69 +35,88 @@ MODEL_NAME = "gemini-2.5-flash"
 
 class RequestData(BaseModel):
     user_id: str
-    prompt: str
     niche: str
     audience: str
+    goal: str
     style: str
+    mode: str
 
 
-@app.get("/")
-def root():
-    return {"status": "ok", "database": "connected"}
+def build_prompt(data: RequestData):
+
+    base = f"""
+Ты — сильный маркетолог и SMM-специалист.
+
+Ниша: {data.niche}
+Аудитория: {data.audience}
+Цель: {data.goal}
+Стиль: {data.style}
+
+Правила:
+- Без воды
+- Конкретика
+- Боль → решение → выгода
+- Используй триггеры
+- Добавляй CTA
+"""
+
+    if data.mode == "plan":
+        task = """
+Сделай контент-план на 7 дней:
+- тема
+- тип (продающий / вовлекающий / экспертный)
+- краткое описание
+"""
+    elif data.mode == "series":
+        task = """
+Сделай прогрев из 5 постов:
+каждый усиливает доверие
+"""
+    elif data.mode == "hooks":
+        task = "Сделай 10 мощных заголовков"
+    else:
+        task = """
+Сделай продающий пост:
+1. Заголовок
+2. Основной текст
+3. CTA
+4. Идея визуала
+"""
+
+    return base + "\n" + task
 
 
 @app.post("/generate")
 def generate(data: RequestData, db: Session = Depends(get_db)):
+
     if not os.getenv("GEMINI_API_KEY"):
-        raise HTTPException(status_code=500, detail="Ключ API GEMINI_API_KEY не установлен в переменных Render.")
+        raise HTTPException(status_code=500, detail="Нет API ключа")
 
     try:
         user = db.query(User).filter(User.user_id == data.user_id).first()
-        
+
         if not user:
             user = User(
                 user_id=data.user_id,
                 niche=data.niche,
                 audience=data.audience,
                 style=data.style,
-                history=f"Запрос: {data.prompt}\n"
+                history=""
             )
             db.add(user)
-        else:
-            user.niche = data.niche
-            user.audience = data.audience
-            user.style = data.style
-            user.history = (user.history or "") + f"\n--- Следующий запрос ---\nЗапрос: {data.prompt}\n"
-        
-        # Конфигурируем модель с отключением строгой блокировки контента (для тем вроде крафтового алкоголя)
-        safety_settings = [
-            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-        ]
 
-        model = genai.GenerativeModel(MODEL_NAME, safety_settings=safety_settings)
-        response = model.generate_content(data.prompt)
+        prompt = build_prompt(data)
 
-        # Более надежное извлечение сгенерированного текста
-        generated_text = ""
-        if hasattr(response, "text") and response.text:
-            generated_text = response.text
-        elif zip(response.candidates):
-            try:
-                generated_text = response.candidates[0].content.parts[0].text
-            except:
-                pass
+        model = genai.GenerativeModel(MODEL_NAME)
+        response = model.generate_content(prompt)
 
-        if generated_text:
-            user.history += f"Ответ ИИ:\n{generated_text}\n"
-            db.commit()
-            return {"result": generated_text}
-        else:
-            # Если сработал внутренний фильтр Google, даем внятный ответ вместо падения
-            raise HTTPException(status_code=422, detail="Запрос заблокирован внутренними фильтрами безопасности Gemini API.")
+        result = response.text if hasattr(response, "text") else ""
+
+        user.history += f"\n---\n{prompt}\n{result}\n"
+        db.commit()
+
+        return {"result": result}
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
