@@ -1,6 +1,5 @@
 const API_URL = "https://ai-bot-backend-x5nr.onrender.com/chat";
 
-// ── User identity (persisted across sessions) ─────────────────────────────────
 function getOrCreateUserId() {
   let id = localStorage.getItem("ai_user_id");
   if (!id) {
@@ -11,21 +10,15 @@ function getOrCreateUserId() {
 }
 
 const userId = getOrCreateUserId();
-
-// ── Conversation state ────────────────────────────────────────────────────────
-// Kept in memory; cleared on page reload or clearChat().
-// The last 20 turns are sent to the backend on each request.
 let history = [];
 let isLoading = false;
 
-// ── UI helpers ────────────────────────────────────────────────────────────────
 function autoResize(el) {
   el.style.height = "auto";
   el.style.height = Math.min(el.scrollHeight, 140) + "px";
 }
 
 function handleKey(e) {
-  // Send on Enter; allow Shift+Enter for new lines
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     sendMessage();
@@ -37,21 +30,17 @@ function scrollToBottom() {
   el.scrollTop = el.scrollHeight;
 }
 
-// ── Text formatting (minimal markdown → HTML) ─────────────────────────────────
 function formatText(text) {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    // Bold: **text**
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    // Inline code: `code`
     .replace(/`([^`\n]+)`/g, "<code>$1</code>")
-    // Line breaks
     .replace(/\n/g, "<br>");
 }
 
-// ── Message rendering ─────────────────────────────────────────────────────────
+// ── Текстовое сообщение ───────────────────────────────────────────────────────
 function addMessage(role, text) {
   const messagesEl = document.getElementById("messages");
   const wrapper = document.createElement("div");
@@ -64,8 +53,54 @@ function addMessage(role, text) {
   wrapper.appendChild(bubble);
   messagesEl.appendChild(wrapper);
   scrollToBottom();
+  return wrapper;
+}
 
-  return wrapper; // return wrapper so we can append upgrade hint
+// ── Сообщение с изображением ──────────────────────────────────────────────────
+function addImageMessage(imageUrl, prompt) {
+  const messagesEl = document.getElementById("messages");
+  const wrapper = document.createElement("div");
+  wrapper.className = "message bot";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble bubble-image";
+
+  // Скелетон пока грузится картинка
+  bubble.innerHTML = `
+    <div class="image-caption">🎨 Генерирую: <em>${prompt}</em></div>
+    <div class="image-skeleton"></div>
+  `;
+
+  const img = document.createElement("img");
+  img.alt = prompt;
+  img.className = "generated-image";
+
+  img.onload = () => {
+    bubble.querySelector(".image-skeleton").replaceWith(img);
+
+    // Кнопка скачать
+    const dl = document.createElement("a");
+    dl.href = imageUrl;
+    dl.target = "_blank";
+    dl.download = "image.jpg";
+    dl.className = "image-download";
+    dl.textContent = "⬇ Открыть в полном размере";
+    bubble.appendChild(dl);
+
+    scrollToBottom();
+  };
+
+  img.onerror = () => {
+    bubble.querySelector(".image-skeleton").outerHTML =
+      '<div style="color:#ff453a;font-size:13px">❌ Не удалось загрузить изображение</div>';
+  };
+
+  img.src = imageUrl;
+
+  wrapper.appendChild(bubble);
+  messagesEl.appendChild(wrapper);
+  scrollToBottom();
+  return wrapper;
 }
 
 // ── Typing indicator ──────────────────────────────────────────────────────────
@@ -85,19 +120,17 @@ function removeTyping() {
   if (el) el.remove();
 }
 
-// ── Soft conversion hint ──────────────────────────────────────────────────────
-// Appended below the bot message wrapper, not inside the bubble —
-// keeps it visually separate and unobtrusive.
-function showUpgradeHint(messageWrapper) {
+// ── Upgrade hint ──────────────────────────────────────────────────────────────
+function showUpgradeHint(wrapper) {
   const hint = document.createElement("div");
   hint.className = "upgrade-hint";
   hint.textContent =
     "💡 Эту задачу можно полностью автоматизировать. Напишите, если хотите настроить один раз — и оно работает само.";
-  messageWrapper.appendChild(hint);
+  wrapper.appendChild(hint);
   scrollToBottom();
 }
 
-// ── Core send ─────────────────────────────────────────────────────────────────
+// ── Отправка ──────────────────────────────────────────────────────────────────
 async function sendMessage() {
   if (isLoading) return;
 
@@ -105,7 +138,6 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-  // Clear input immediately
   input.value = "";
   autoResize(input);
 
@@ -123,7 +155,7 @@ async function sendMessage() {
       body: JSON.stringify({
         user_id: userId,
         message: text,
-        history: history.slice(-20), // send last 20 turns for context
+        history: history.slice(-20),
       }),
     });
 
@@ -131,24 +163,24 @@ async function sendMessage() {
     removeTyping();
 
     if (!res.ok) {
-      addMessage("bot", `❌ ${data.detail || "Ошибка сервера. Попробуйте ещё раз."}`);
+      addMessage("bot", `❌ ${data.detail || "Ошибка сервера."}`);
       return;
     }
 
-    const botWrapper = addMessage("bot", data.result);
-    history.push({ role: "assistant", content: data.result });
-
-    // Show upgrade hint only when backend signals it's appropriate
-    if (data.suggest_upgrade) {
-      showUpgradeHint(botWrapper);
+    // ── Роутинг по типу ответа ─────────────────────────────────────────────
+    if (data.type === "image") {
+      addImageMessage(data.image_url, data.prompt);
+      history.push({ role: "assistant", content: `[Изображение: ${data.prompt}]` });
+    } else {
+      const wrapper = addMessage("bot", data.result);
+      history.push({ role: "assistant", content: data.result });
+      if (data.suggest_upgrade) showUpgradeHint(wrapper);
     }
+
   } catch (err) {
     removeTyping();
-    addMessage(
-      "bot",
-      "❌ Не удалось подключиться к серверу. Проверьте соединение."
-    );
-    console.error("Fetch error:", err);
+    addMessage("bot", "❌ Не удалось подключиться к серверу.");
+    console.error(err);
   } finally {
     isLoading = false;
     document.getElementById("sendBtn").disabled = false;
@@ -156,20 +188,19 @@ async function sendMessage() {
   }
 }
 
-// ── Clear conversation ────────────────────────────────────────────────────────
 function clearChat() {
   history = [];
   document.getElementById("messages").innerHTML = `
     <div class="message bot">
       <div class="bubble">
         Привет. Я ваш универсальный AI-ассистент — один инструмент вместо команды специалистов.<br><br>
-        Задавайте любые задачи: стратегия бизнеса, написание текстов, технические вопросы, анализ данных, автоматизация процессов.
+        Задавайте любые задачи: стратегия бизнеса, написание текстов, технические вопросы, анализ данных, автоматизация процессов.<br><br>
+        Также умею <strong>генерировать изображения</strong> — просто напишите «нарисуй» или «сгенерируй картинку».
       </div>
     </div>
   `;
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
 window.addEventListener("load", () => {
   document.getElementById("userInput").focus();
 });
