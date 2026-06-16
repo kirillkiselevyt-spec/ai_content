@@ -228,3 +228,60 @@ textarea::placeholder { color: #3a3a3c; }
   .messages { padding: 16px 14px; }
   .input-area { padding: 10px 12px 16px; }
 }
+/* ── Generated image bubble ────────────────────────────────────────────────── */
+.bubble-image {
+  padding: 12px;
+  max-width: 320px;
+}
+
+.image-caption {
+  font-size: 13px;
+  color: #86868b;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.image-caption em {
+  color: #a1a1a6;
+  font-style: italic;
+}
+
+.image-skeleton {
+  width: 280px;
+  height: 280px;
+  border-radius: 12px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.generated-image {
+  width: 280px;
+  height: 280px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.image-download {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #5aacf5;
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+.image-download:hover { opacity: 1; }
+
